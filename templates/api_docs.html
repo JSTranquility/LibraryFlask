@@ -1,0 +1,89 @@
+{% extends "master.html" %}
+
+{% block title %}API Docs - Vellum{% endblock %}
+
+{% block content %}
+<div class="app-container animate-fade" style="padding: 80px 0;">
+    <div style="background: var(--surface-strong); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 60px;">
+        <h1 class="heading-xl" style="margin-bottom: 8px;">API Pública</h1>
+        <p style="color: var(--text-muted); margin-bottom: 40px;">Endpoints públicos del catálogo Vellum. No requieren autenticación.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                <div style="background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+                    <code style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">GET</code>
+                    <code style="font-size: 1rem;">/api/books</code>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="margin-bottom: 8px; font-size: 0.9rem;">Lista completa de todos los libros.</p>
+                    <pre style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); font-size: 0.8rem; overflow-x: auto;">curl http://127.0.0.1:5000/api/books</pre>
+                </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                <div style="background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+                    <code style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">GET</code>
+                    <code style="font-size: 1rem;">/api/books/&lt;id&gt;</code>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="margin-bottom: 8px; font-size: 0.9rem;">Detalle de un libro por ID.</p>
+                    <pre style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); font-size: 0.8rem; overflow-x: auto;">curl http://127.0.0.1:5000/api/books/1</pre>
+                </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                <div style="background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+                    <code style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">GET</code>
+                    <code style="font-size: 1rem;">/api/books/paginated?page=1&per_page=12&genre=&search=&sort=newest</code>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="margin-bottom: 8px; font-size: 0.9rem;">Catálogo paginado con filtros opcionales.</p>
+                    <table style="width: 100%; font-size: 0.85rem; margin-bottom: 8px; border-collapse: collapse;">
+                        <tr><td style="padding: 4px 8px;"><code>page</code></td><td>int</td><td>default: 1</td></tr>
+                        <tr><td style="padding: 4px 8px;"><code>per_page</code></td><td>int</td><td>default: 12</td></tr>
+                        <tr><td style="padding: 4px 8px;"><code>search</code></td><td>string</td><td>búsqueda por título o autor</td></tr>
+                        <tr><td style="padding: 4px 8px;"><code>genre</code></td><td>string</td><td>filtrar por género</td></tr>
+                        <tr><td style="padding: 4px 8px;"><code>language</code></td><td>string</td><td>filtrar por idioma</td></tr>
+                        <tr><td style="padding: 4px 8px;"><code>year</code></td><td>string</td><td>filtrar por año</td></tr>
+                        <tr><td style="padding: 4px 8px;"><code>sort</code></td><td>string</td><td><code>newest</code>, <code>oldest</code>, <code>az</code></td></tr>
+                    </table>
+                    <pre style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); font-size: 0.8rem; overflow-x: auto;">curl "http://127.0.0.1:5000/api/books/paginated?page=1&per_page=5&genre=Ficción"</pre>
+                </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                <div style="background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+                    <code style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">GET</code>
+                    <code style="font-size: 1rem;">/api/books/&lt;id&gt;/reviews</code>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="margin-bottom: 8px; font-size: 0.9rem;">Reseñas de un libro.</p>
+                    <pre style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); font-size: 0.8rem; overflow-x: auto;">curl http://127.0.0.1:5000/api/books/1/reviews</pre>
+                </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                <div style="background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+                    <code style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">GET</code>
+                    <code style="font-size: 1rem;">/api/books/fetch-by-isbn?isbn=978...</code>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="margin-bottom: 8px; font-size: 0.9rem;">Busca metadata de un libro por ISBN (Open Library).</p>
+                    <pre style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); font-size: 0.8rem; overflow-x: auto;">curl "http://127.0.0.1:5000/api/books/fetch-by-isbn?isbn=9780061120084"</pre>
+                </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                <div style="background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+                    <code style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">GET</code>
+                    <code style="font-size: 1rem;">/api/stats/reviews</code>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="margin-bottom: 8px; font-size: 0.9rem;">Total de reseñas en la plataforma.</p>
+                    <pre style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); font-size: 0.8rem; overflow-x: auto;">curl http://127.0.0.1:5000/api/stats/reviews</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+library.db
+main/library.db
+static/uploads/*
+brain/
+.DS_Store
+Thumbs.db
+.pytest_cache/
+

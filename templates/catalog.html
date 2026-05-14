@@ -1,48 +1,53 @@
 {% extends "master.html" %}
 
-{% block title %}Catálogo Completo - Librería Boutique{% endblock %}
+{% block title %}Catálogo - Vellum{% endblock %}
 
 {% block content %}
 <section class="animate-fade" style="padding: 60px 0 30px; background: linear-gradient(rgba(253, 250, 247, 0.85), rgba(253, 250, 247, 0.85)), url('/static/images/hero.png') center/cover fixed; border-bottom: 1px solid var(--border);">
     <div class="app-container" style="text-align: center;">
-        <h1 class="heading-lg" style="margin-bottom: 8px;">Nuestra Colección</h1>
-        <p style="color: var(--text-muted); font-size: 1.1rem;">Encuentra tu próxima lectura filtrando por título o autor.</p>
+        <h1 class="heading-lg" style="margin-bottom: 8px;">Catálogo Vellum</h1>
+        <p style="color: var(--text-muted); font-size: 1.1rem;">Encuentra tu próxima lectura</p>
     </div>
 </section>
 
 <section style="padding: 40px 0 100px;">
     <div class="app-container">
-        <!-- Search and Filters Panel (Simplified) -->
-        <div style="background: var(--surface-strong); background-image: url('/static/images/main_bg.png'); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: var(--shadow-md); margin-bottom: 48px;">
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px;">
-                <!-- Search -->
+        <!-- Filters -->
+        <div style="background: var(--surface-strong); background-image: url('/static/images/main_bg.png'); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: var(--shadow-md); margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 12px; align-items: end;">
                 <div style="position: relative;">
                     <span class="material-symbols-rounded" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">search</span>
-                    <input type="text" id="catalog-search" class="form-input" style="padding-left: 48px; height: 52px;" placeholder="Buscar obra o autor...">
+                    <input type="text" id="catalog-search" class="form-input" style="padding-left: 48px; height: 44px; font-size: 0.85rem;" placeholder="Buscar obra o autor...">
                 </div>
-                <!-- Author Filter -->
-                <select id="author-filter" class="form-input" style="height: 52px;">
-                    <option value="all">Todos los Autores</option>
-                </select>
-                <!-- Sort -->
-                <select id="sort-order" class="form-input" style="height: 52px;">
+                <select id="genre-filter" class="form-input" style="height: 44px; font-size: 0.82rem;"><option value="all">Género</option></select>
+                <select id="language-filter" class="form-input" style="height: 44px; font-size: 0.82rem;"><option value="all">Idioma</option></select>
+                <select id="year-filter" class="form-input" style="height: 44px; font-size: 0.82rem;"><option value="all">Año</option></select>
+                <select id="sort-order" class="form-input" style="height: 44px; font-size: 0.82rem;">
                     <option value="newest">Más recientes</option>
                     <option value="oldest">Más antiguos</option>
-                    <option value="az">Título A - Z</option>
+                    <option value="az">A - Z</option>
                 </select>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                <span id="result-count" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+                <div style="display: flex; gap: 6px;">
+                    <button id="view-grid" class="btn btn-outline" style="padding: 8px; min-width: 40px; height: 40px;" title="Vista cuadrícula"><span class="material-symbols-rounded">grid_view</span></button>
+                    <button id="view-list" class="btn btn-outline" style="padding: 8px; min-width: 40px; height: 40px;" title="Vista lista"><span class="material-symbols-rounded">list</span></button>
+                </div>
             </div>
         </div>
 
-        <!-- Compact Grid -->
-        <div id="catalog-grid" class="book-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px;">
-            <!-- Books will be loaded here -->
-        </div>
+        <!-- Books Container -->
+        <div id="catalog-container"></div>
+
+        <!-- Pagination -->
+        <div id="pagination" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 40px;"></div>
 
         <!-- Empty State -->
         <div id="empty-state" style="display: none; text-align: center; padding: 100px 0;">
             <span class="material-symbols-rounded" style="font-size: 4rem; color: var(--border-strong); margin-bottom: 16px;">library_books_off</span>
             <h2 class="heading-md">Sin coincidencias</h2>
-            <p style="color: var(--text-muted);">Prueba con otros términos o autores.</p>
+            <p style="color: var(--text-muted);">Prueba con otros términos o filtros.</p>
         </div>
     </div>
 </section>
@@ -50,103 +55,131 @@
 
 {% block scripts %}
 <script>
-let allBooks = [];
-let filters = {
-    author: 'all',
-    search: ''
-};
+let state = { page: 1, totalPages: 1, view: 'grid' };
+const userFavorites = {{ favorites_ids | tojson }};
 
 function getCoverPath(book) {
-    if (book.cover) return book.cover;
+    if (book && book.cover) return book.cover;
     const covers = {
         '1984': '/static/images/1984.jpg',
         'The Great Gatsby': '/static/images/gatsby.jpg',
         'To Kill a Mockingbird': '/static/images/mockingbird.png'
     };
-    return covers[book.title] || '/static/images/book_cover.png';
+    return covers[book && book.title] || '/static/images/book_cover.png';
 }
 
-async function initCatalog() {
+async function loadCatalog() {
+    const params = new URLSearchParams({
+        page: state.page,
+        per_page: 12,
+        genre: document.getElementById('genre-filter').value,
+        language: document.getElementById('language-filter').value,
+        year: document.getElementById('year-filter').value,
+        search: document.getElementById('catalog-search').value,
+        sort: document.getElementById('sort-order').value
+    });
     try {
-        const response = await fetch('/api/books');
-        allBooks = await response.json();
-        populateAuthors();
-        renderBooks();
+        const res = await fetch(`/api/books/paginated?${params}`);
+        const data = await res.json();
+        renderFilters(data.filters);
+        renderBooks(data.books);
+        renderPagination(data);
+        document.getElementById('result-count').textContent = `${data.total} libro${data.total !== 1 ? 's' : ''} encontrados`;
     } catch (e) { console.error(e); }
 }
 
-function populateAuthors() {
-    const authors = [...new Set(allBooks.map(b => b.author))].sort();
-    const authorSelect = document.getElementById('author-filter');
-    authorSelect.innerHTML = '<option value="all">Todos los Autores</option>';
-    authors.forEach(a => {
-        authorSelect.innerHTML += `<option value="${a}">${a}</option>`;
-    });
+function renderFilters(filters) {
+    const genreSel = document.getElementById('genre-filter');
+    const langSel = document.getElementById('language-filter');
+    const yearSel = document.getElementById('year-filter');
+    if (!genreSel.dataset.set) {
+        filters.genres.forEach(g => { genreSel.innerHTML += `<option value="${g}">${g}</option>`; });
+        filters.languages.forEach(l => { langSel.innerHTML += `<option value="${l}">${l}</option>`; });
+        filters.years.forEach(y => { yearSel.innerHTML += `<option value="${y}">${y}</option>`; });
+        genreSel.dataset.set = '1';
+        langSel.dataset.set = '1';
+        yearSel.dataset.set = '1';
+    }
 }
 
-function renderBooks() {
-    const grid = document.getElementById('catalog-grid');
+function renderBooks(books) {
+    const container = document.getElementById('catalog-container');
     const empty = document.getElementById('empty-state');
-    
-    let filtered = allBooks.filter(b => {
-        const matchesAuthor = filters.author === 'all' || b.author === filters.author;
-        const matchesSearch = b.title.toLowerCase().includes(filters.search.toLowerCase()) || 
-                             b.author.toLowerCase().includes(filters.search.toLowerCase());
-        return matchesAuthor && matchesSearch;
-    });
-
-    const sort = document.getElementById('sort-order').value;
-    if (sort === 'newest') filtered.sort((a, b) => b.year - a.year);
-    if (sort === 'oldest') filtered.sort((a, b) => a.year - b.year);
-    if (sort === 'az') filtered.sort((a, b) => a.title.localeCompare(b.title));
-
-    grid.innerHTML = '';
-    
-    if (filtered.length === 0) {
-        grid.style.display = 'none';
+    if (books.length === 0) {
+        container.innerHTML = '';
         empty.style.display = 'block';
-    } else {
-        grid.style.display = 'grid';
-        empty.style.display = 'none';
-        
-        filtered.forEach((book, index) => {
-            const cover = getCoverPath(book);
-            grid.innerHTML += `
-                <div class="premium-card animate-fade" style="padding: 16px; border-radius: 12px; animation-delay: ${index * 0.05}s; cursor: pointer;" onclick="window.location.href='/book/${book.id}'">
-                    <div class="card-image-stub" style="height: 220px; background-image: url('${cover}'); margin-bottom: 12px; border-radius: 8px;">
-                         ${cover.includes('book_cover.png') ? '<span class="material-symbols-rounded" style="font-size: 2.5rem; opacity: 0.3;">auto_stories</span>' : ''}
+        return;
+    }
+    empty.style.display = 'none';
+    if (state.view === 'grid') {
+        container.innerHTML = `<div class="book-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px;">${
+            books.map((book, i) => {
+                const cover = getCoverPath(book);
+                const isFav = userFavorites && userFavorites.includes(book.id);
+                return `<div class="premium-card animate-fade" style="padding: 16px; border-radius: 12px; animation-delay: ${i * 0.03}s; cursor: pointer; position: relative;" onclick="window.location.href='/book/${book.id}'">
+                    ${isFav ? '<span class="material-symbols-rounded" style="position: absolute; top: 24px; right: 24px; color: #e63946; background: rgba(255,255,255,0.9); border-radius: 50%; padding: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-variation-settings: \'FILL\' 1; z-index: 2;">favorite</span>' : ''}
+                    <div class="card-image-stub" style="height: 220px; background-image: url('${cover}'); background-size: cover; background-position: center; margin-bottom: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        ${cover.includes('book_cover.png') ? '<span class="material-symbols-rounded" style="font-size: 2.5rem; opacity: 0.3;">auto_stories</span>' : ''}
                     </div>
-                    <div style="flex-grow: 1;">
-                        <div class="badge" style="font-size: 0.7rem; padding: 4px 8px; margin-bottom: 8px;">${book.genre}</div>
-                        <h3 style="font-size: 1rem; line-height: 1.3; margin-bottom: 2px; font-family: 'Raleway', sans-serif; font-weight: 800;">${book.title}</h3>
-                        <p style="color: var(--text-muted); font-size: 0.85rem;">${book.author}</p>
-                    </div>
+                    <div><div class="badge" style="font-size: 0.7rem; padding: 4px 8px; margin-bottom: 8px;">${book.genre}</div>
+                    <h3 style="font-size: 1rem; line-height: 1.3; font-weight: 800; font-family: 'Raleway', sans-serif;">${book.title}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">${book.author}</p></div>
                     <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-muted); display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-weight: 700; color: var(--primary); font-size: 0.85rem;">${book.year}</span>
                         <span class="material-symbols-rounded" style="font-size: 1rem; color: var(--border-strong);">arrow_forward</span>
                     </div>
-                </div>
-            `;
-        });
+                </div>`;
+            }).join('')
+        }</div>`;
+    } else {
+        container.innerHTML = `<div style="display: flex; flex-direction: column; gap: 12px;">${
+            books.map((book, i) => {
+                const cover = getCoverPath(book);
+                return `<div class="animate-fade" style="animation-delay: ${i * 0.03}s; display: flex; background: var(--surface-strong); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 16px; gap: 20px; cursor: pointer; transition: all 0.3s ease;" onclick="window.location.href='/book/${book.id}'" onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='none'">
+                    <div style="width: 80px; height: 110px; flex-shrink: 0; border-radius: var(--radius-sm); background-image: url('${cover}'); background-size: cover; background-position: center; background-color: var(--surface-muted);"></div>
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <span class="badge" style="align-self: flex-start; margin-bottom: 6px;">${book.genre}</span>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; font-family: 'Raleway', sans-serif;">${book.title}</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">${book.author} · ${book.year}</p>
+                        ${book.description ? `<p style="color: var(--text-main); font-size: 0.85rem; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${book.description}</p>` : ''}
+                    </div>
+                    <div style="display: flex; flex-direction: column; justify-content: center; gap: 4px; align-items: flex-end;">
+                        ${book.language ? `<span class="badge">${book.language}</span>` : ''}
+                        ${book.pages ? `<span style="font-size: 0.75rem; color: var(--text-muted);">${book.pages}p</span>` : ''}
+                    </div>
+                </div>`;
+            }).join('')
+        }</div>`;
     }
 }
 
-document.getElementById('catalog-search').oninput = (e) => {
-    filters.search = e.target.value;
-    renderBooks();
-};
-
-document.getElementById('author-filter').onchange = (e) => {
-    filters.author = e.target.value;
-    renderBooks();
-};
-
-document.getElementById('sort-order').onchange = renderBooks;
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCatalog);
-} else {
-    initCatalog();
+function renderPagination(data) {
+    state.totalPages = data.total_pages;
+    const el = document.getElementById('pagination');
+    if (data.total_pages <= 1) { el.innerHTML = ''; return; }
+    let html = `<button class="btn btn-outline" style="padding: 8px 16px;" onclick="goToPage(${data.page - 1})" ${data.page <= 1 ? 'disabled' : ''}><span class="material-symbols-rounded" style="font-size: 1rem;">chevron_left</span></button>`;
+    for (let p = 1; p <= data.total_pages; p++) {
+        if (p === 1 || p === data.total_pages || Math.abs(p - data.page) <= 2) {
+            html += `<button class="btn ${p === data.page ? 'btn-primary' : 'btn-outline'}" style="padding: 8px 16px; min-width: 40px;" onclick="goToPage(${p})">${p}</button>`;
+        } else if (p === data.page - 3 || p === data.page + 3) {
+            html += `<span style="color: var(--text-muted); padding: 0 4px;">...</span>`;
+        }
+    }
+    html += `<button class="btn btn-outline" style="padding: 8px 16px;" onclick="goToPage(${data.page + 1})" ${data.page >= data.total_pages ? 'disabled' : ''}><span class="material-symbols-rounded" style="font-size: 1rem;">chevron_right</span></button>`;
+    el.innerHTML = html;
 }
+
+function goToPage(p) { state.page = p; loadCatalog(); window.scrollTo({ top: 300, behavior: 'smooth' }); }
+
+['catalog-search', 'genre-filter', 'language-filter', 'year-filter', 'sort-order'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { state.page = 1; loadCatalog(); });
+});
+document.getElementById('catalog-search').addEventListener('input', () => { state.page = 1; loadCatalog(); });
+
+document.getElementById('view-grid').onclick = () => { state.view = 'grid'; loadCatalog(); };
+document.getElementById('view-list').onclick = () => { state.view = 'list'; loadCatalog(); };
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadCatalog);
+else loadCatalog();
 </script>
 {% endblock %}

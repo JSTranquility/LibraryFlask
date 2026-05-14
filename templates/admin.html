@@ -1,8 +1,12 @@
 {% extends "master.html" %}
 
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="app-container animate-fade" style="padding: 60px 0;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 60px; background: var(--surface); padding: 40px; border-radius: var(--radius-lg); border: 1px solid var(--border);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; background: var(--surface); padding: 40px; border-radius: var(--radius-lg); border: 1px solid var(--border);">
         <div>
             <h1 class="heading-lg" style="margin-bottom: 8px;">Centro de Control</h1>
             <p style="color: var(--text-muted);">Administración global de usuarios y existencias</p>
@@ -14,56 +18,101 @@
             <button onclick="openModal('modal-add-book')" class="btn btn-primary">
                 <span class="material-symbols-rounded">add_circle</span> Libro
             </button>
+            <div class="nav-dropdown">
+                <button class="btn btn-outline">
+                    <span class="material-symbols-rounded">download</span> Exportar
+                </button>
+                <div class="dropdown-menu" style="min-width: 140px;">
+                    <a href="/api/export-books?format=json" class="dropdown-item"><span class="material-symbols-rounded">data_object</span> JSON</a>
+                    <a href="/api/export-books?format=csv" class="dropdown-item"><span class="material-symbols-rounded">table</span> CSV</a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr; gap: 60px;">
-        <!-- Usuarios -->
-        <section>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-                <span class="material-symbols-rounded" style="color: var(--primary);">group</span>
-                <h2 class="heading-md" style="margin: 0;">Gestión de Usuarios</h2>
-            </div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th style="text-align: right;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-table"></tbody>
-                </table>
-            </div>
-        </section>
+    <!-- Stats Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 40px;">
+        <div style="background: var(--surface-strong); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); text-align: center;">
+            <span class="material-symbols-rounded" style="color: var(--primary); font-size: 2rem;">library_books</span>
+            <div id="stat-books" style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">0</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; letter-spacing: 1px;">LIBROS</div>
+        </div>
+        <div style="background: var(--surface-strong); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); text-align: center;">
+            <span class="material-symbols-rounded" style="color: #3b82f6; font-size: 2rem;">group</span>
+            <div id="stat-users" style="font-size: 1.8rem; font-weight: 800; color: #3b82f6;">0</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; letter-spacing: 1px;">USUARIOS</div>
+        </div>
+        <div style="background: var(--surface-strong); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); text-align: center;">
+            <span class="material-symbols-rounded" style="color: #f59e0b; font-size: 2rem;">star</span>
+            <div id="stat-reviews" style="font-size: 1.8rem; font-weight: 800; color: #f59e0b;">0</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; letter-spacing: 1px;">RESEÑAS</div>
+        </div>
+        <div style="background: var(--surface-strong); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); text-align: center;">
+            <span class="material-symbols-rounded" style="color: #e63946; font-size: 2rem;">favorite</span>
+            <div id="stat-favorites" style="font-size: 1.8rem; font-weight: 800; color: #e63946;">0</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; letter-spacing: 1px;">FAVORITOS</div>
+        </div>
+    </div>
 
-        <!-- Libros -->
-        <section>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-                <span class="material-symbols-rounded" style="color: var(--primary);">library_books</span>
-                <h2 class="heading-md" style="margin: 0;">Catálogo Maestro</h2>
-            </div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Título</th>
-                            <th>Autor</th>
-                            <th>Año</th>
-                            <th>Género</th>
-                            <th style="text-align: right;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="book-table"></tbody>
-                </table>
-            </div>
-        </section>
+    <!-- Charts Row -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px;">
+        <div style="background: var(--surface-strong); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+            <h3 style="margin-bottom: 16px; font-size: 1rem;">Libros más favoritedos</h3>
+            <canvas id="chart-favs" height="200"></canvas>
+        </div>
+        <div style="background: var(--surface-strong); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+            <h3 style="margin-bottom: 16px; font-size: 1rem;">Usuarios más activos (reseñas)</h3>
+            <canvas id="chart-reviewers" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border); width: fit-content;">
+        <button class="tab-btn active" data-tab="tab-users" style="padding: 10px 24px; border: none; background: none; cursor: pointer; border-radius: var(--radius-sm); font-weight: 600; color: var(--text-muted); transition: all 0.2s;"><span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">group</span> Usuarios</button>
+        <button class="tab-btn" data-tab="tab-books" style="padding: 10px 24px; border: none; background: none; cursor: pointer; border-radius: var(--radius-sm); font-weight: 600; color: var(--text-muted); transition: all 0.2s;"><span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">library_books</span> Libros</button>
+        <button class="tab-btn" data-tab="tab-logs" style="padding: 10px 24px; border: none; background: none; cursor: pointer; border-radius: var(--radius-sm); font-weight: 600; color: var(--text-muted); transition: all 0.2s;"><span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">history</span> Actividad</button>
+    </div>
+
+    <!-- Tab: Users -->
+    <div id="tab-users" class="tab-content" style="display: block;">
+        <div style="position: relative; width: 250px; margin-bottom: 16px;">
+            <span class="material-symbols-rounded" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.2rem;">search</span>
+            <input type="text" id="search-users" class="form-input" placeholder="Buscar usuario..." style="padding-left: 40px; height: 40px; font-size: 0.9rem;">
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th style="text-align: right;">Acción</th></tr></thead>
+                <tbody id="user-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab: Books -->
+    <div id="tab-books" class="tab-content" style="display: none;">
+        <div style="position: relative; width: 300px; margin-bottom: 16px;">
+            <span class="material-symbols-rounded" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.2rem;">search</span>
+            <input type="text" id="search-books" class="form-input" placeholder="Buscar por título, autor o género..." style="padding-left: 40px; height: 40px; font-size: 0.9rem;">
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Título</th><th>Autor</th><th>Año</th><th>Género</th><th style="text-align: right;">Acciones</th></tr></thead>
+                <tbody id="book-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab: Activity Logs -->
+    <div id="tab-logs" class="tab-content" style="display: none;">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
+                <tbody id="logs-table"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<!-- Modals -->
+<!-- Modal: Add User -->
 <div id="modal-add-user" class="modal-overlay">
     <div class="modal-container">
         <h2 class="heading-md">Nuevo Usuario</h2>
@@ -84,31 +133,55 @@
     </div>
 </div>
 
+<!-- Modal: Edit User -->
+<div id="modal-edit-user" class="modal-overlay">
+    <div class="modal-container">
+        <h2 class="heading-md">Editar Usuario</h2>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">Modifica los datos del usuario.</p>
+        <form id="form-edit-user" style="display: flex; flex-direction: column; gap: 16px;">
+            <input type="hidden" name="original_username">
+            <input type="text" name="username" placeholder="Nombre de usuario" class="form-input" required>
+            <input type="email" name="email" placeholder="Correo electrónico" class="form-input" required>
+            <select name="role" class="form-input">
+                <option value="user">Usuario</option>
+                <option value="admin">Admin</option>
+            </select>
+            <div style="display: flex; gap: 12px; margin-top: 8px;">
+                <button type="button" onclick="closeModal('modal-edit-user')" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Add Book -->
 <div id="modal-add-book" class="modal-overlay">
     <div class="modal-container">
-        <h2 class="heading-md">Añadir Obra</h2>
-        <p style="color: var(--text-muted); margin-bottom: 32px;">Ingrese los detalles bibliográficos.</p>
-        <form id="form-add-book" style="display: flex; flex-direction: column; gap: 20px;">
-            <input type="text" name="title" placeholder="Título de la obra" class="form-input" required>
-            <input type="text" name="author" placeholder="Autor / Escritor" class="form-input" required>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <input type="number" name="year" placeholder="Año" class="form-input" required>
-                <input type="text" name="genre" placeholder="Género" class="form-input" required>
+        <h2 class="heading-md" style="margin-bottom: 8px;">Añadir Obra</h2>
+        <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.9rem;">Ingrese los detalles bibliográficos.</p>
+        <div style="grid-column: span 2; display: flex; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.03); padding: 12px; border-radius: var(--radius-sm);">
+            <input type="text" id="isbn-search" placeholder="Buscar por ISBN (ej: 978...)" class="form-input" style="flex: 1;">
+            <button type="button" onclick="fetchBookByISBN()" class="btn btn-primary" style="padding: 0 16px;">
+                <span class="material-symbols-rounded">search</span>
+            </button>
+        </div>
+        <form id="form-add-book" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="grid-column: span 2;"><input type="text" name="title" placeholder="Título de la obra" class="form-input" required></div>
+            <div style="grid-column: span 2;"><input type="text" name="author" placeholder="Autor / Escritor" class="form-input" required></div>
+            <input type="number" name="year" placeholder="Año" class="form-input" required>
+            <input type="text" name="genre" placeholder="Género" class="form-input" required>
+            <input type="text" name="isbn" placeholder="ISBN" class="form-input">
+            <input type="text" name="language" placeholder="Idioma" class="form-input">
+            <input type="text" name="format" placeholder="Formato" class="form-input">
+            <input type="text" name="pages" placeholder="Nº Páginas" class="form-input">
+            <div style="grid-column: span 2;"><input type="url" name="buy_link" placeholder="Link de compra (Amazon, etc.)" class="form-input"></div>
+            <div style="grid-column: span 2;"><input type="text" name="tags" placeholder="Tags separadas por comas (ej: clasico, suspense, drama)" class="form-input"></div>
+            <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Portada del Libro</label>
+                <input type="file" name="cover" class="form-input" accept="image/*" style="padding: 8px 12px; font-size: 0.85rem;">
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <input type="text" name="isbn" placeholder="ISBN (ej. 978-...)" class="form-input">
-                <input type="text" name="language" placeholder="Idioma" class="form-input">
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <input type="text" name="format" placeholder="Formato" class="form-input">
-                <input type="text" name="pages" placeholder="Nº de Páginas" class="form-input">
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Portada del Libro</label>
-                <input type="file" name="cover" class="form-input" accept="image/*">
-            </div>
-            <textarea name="description" placeholder="Sinopsis de la obra..." class="form-input" style="min-height: 120px; resize: vertical;"></textarea>
-            <div style="display: flex; gap: 12px; margin-top: 12px;">
+            <div style="grid-column: span 2;"><textarea name="description" placeholder="Sinopsis de la obra..." class="form-input" style="min-height: 80px; resize: vertical;"></textarea></div>
+            <div style="grid-column: span 2; display: flex; gap: 12px; margin-top: 8px;">
                 <button type="button" onclick="closeModal('modal-add-book')" class="btn btn-outline" style="flex: 1;">Cancelar</button>
                 <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar</button>
             </div>
@@ -116,32 +189,28 @@
     </div>
 </div>
 
+<!-- Modal: Edit Book -->
 <div id="modal-edit-book" class="modal-overlay">
     <div class="modal-container">
-        <h2 class="heading-md">Editar Obra</h2>
-        <p style="color: var(--text-muted); margin-bottom: 32px;">Modifique los datos del libro seleccionado.</p>
-        <form id="form-edit-book" style="display: flex; flex-direction: column; gap: 20px;">
+        <h2 class="heading-md" style="margin-bottom: 8px;">Editar Obra</h2>
+        <form id="form-edit-book" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <input type="hidden" name="id">
-            <input type="text" name="title" placeholder="Título de la obra" class="form-input" required>
-            <input type="text" name="author" placeholder="Autor / Escritor" class="form-input" required>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <input type="number" name="year" placeholder="Año" class="form-input" required>
-                <input type="text" name="genre" placeholder="Género" class="form-input" required>
+            <div style="grid-column: span 2;"><input type="text" name="title" placeholder="Título" class="form-input" required></div>
+            <div style="grid-column: span 2;"><input type="text" name="author" placeholder="Autor" class="form-input" required></div>
+            <input type="number" name="year" placeholder="Año" class="form-input" required>
+            <input type="text" name="genre" placeholder="Género" class="form-input" required>
+            <input type="text" name="isbn" placeholder="ISBN" class="form-input">
+            <input type="text" name="language" placeholder="Idioma" class="form-input">
+            <input type="text" name="format" placeholder="Formato" class="form-input">
+            <input type="text" name="pages" placeholder="Páginas" class="form-input">
+            <div style="grid-column: span 2;"><input type="url" name="buy_link" placeholder="Link de compra (Amazon, etc.)" class="form-input"></div>
+            <div style="grid-column: span 2;"><input type="text" name="tags" placeholder="Tags (comas)" class="form-input"></div>
+            <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Actualizar Portada (opcional)</label>
+                <input type="file" name="cover" class="form-input" accept="image/*" style="padding: 8px 12px; font-size: 0.85rem;">
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <input type="text" name="isbn" placeholder="ISBN" class="form-input">
-                <input type="text" name="language" placeholder="Idioma" class="form-input">
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <input type="text" name="format" placeholder="Formato" class="form-input">
-                <input type="text" name="pages" placeholder="Nº de Páginas" class="form-input">
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Actualizar Portada (opcional)</label>
-                <input type="file" name="cover" class="form-input" accept="image/*">
-            </div>
-            <textarea name="description" placeholder="Sinopsis de la obra..." class="form-input" style="min-height: 120px; resize: vertical;"></textarea>
-            <div style="display: flex; gap: 12px; margin-top: 12px;">
+            <div style="grid-column: span 2;"><textarea name="description" placeholder="Sinopsis..." class="form-input" style="min-height: 80px; resize: vertical;"></textarea></div>
+            <div style="grid-column: span 2; display: flex; gap: 12px; margin-top: 8px;">
                 <button type="button" onclick="closeModal('modal-edit-book')" class="btn btn-outline" style="flex: 1;">Cancelar</button>
                 <button type="submit" class="btn btn-primary" style="flex: 1;">Actualizar</button>
             </div>
@@ -152,50 +221,122 @@
 
 {% block scripts %}
 <script>
+let chartFavs, chartReviewers;
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => { b.style.background = 'none'; b.style.color = 'var(--text-muted)'; });
+        btn.style.background = 'var(--primary)'; btn.style.color = 'white';
+        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+        document.getElementById(btn.dataset.tab).style.display = 'block';
+        if (btn.dataset.tab === 'tab-logs') loadLogs();
+    });
+});
+
 async function loadData() {
     try {
-        const uRes = await fetch('/api/users');
+        const [uRes, bRes, rRes, dRes] = await Promise.all([
+            fetch('/api/users'), fetch('/api/books'),
+            fetch('/api/stats/reviews'), fetch('/api/stats/dashboard')
+        ]);
         const users = await uRes.json();
-        const uTable = document.getElementById('user-table');
-        uTable.innerHTML = '';
-        users.forEach(u => {
-            uTable.innerHTML += `
-                <tr>
-                    <td style="font-weight: 600;">${u.username}</td>
-                    <td style="color: var(--text-muted);">${u.email}</td>
-                    <td><span class="badge">${u.role}</span></td>
-                    <td style="text-align: right;">
-                        <button onclick="deleteUser('${u.username}')" style="color: #e63946; background: none; border: none; cursor: pointer;">
-                            <span class="material-symbols-rounded">delete</span>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        const bRes = await fetch('/api/books');
         const books = await bRes.json();
-        const bTable = document.getElementById('book-table');
-        bTable.innerHTML = '';
-        books.forEach(b => {
-            bTable.innerHTML += `
-                <tr>
-                    <td style="font-weight: 600;">${b.title}</td>
-                    <td>${b.author}</td>
-                    <td style="color: var(--text-muted);">${b.year}</td>
-                    <td><span class="badge">${b.genre}</span></td>
-                    <td style="text-align: right; display: flex; gap: 12px; justify-content: flex-end;">
-                        <button onclick='editBook(${JSON.stringify(b)})' style="color: var(--primary); background: none; border: none; cursor: pointer;">
-                            <span class="material-symbols-rounded">edit</span>
-                        </button>
-                        <button onclick="deleteBook(${b.id})" style="color: #e63946; background: none; border: none; cursor: pointer;">
-                            <span class="material-symbols-rounded">delete</span>
-                        </button>
-                    </td>
-                </tr>
-            `;
+        const rData = await rRes.json();
+        const stats = await dRes.json();
+
+        document.getElementById('stat-books').innerText = stats.total_books;
+        document.getElementById('stat-users').innerText = stats.total_users;
+        document.getElementById('stat-reviews').innerText = stats.total_reviews;
+        document.getElementById('stat-favorites').innerText = stats.total_favorites;
+
+        renderUsers(users);
+        renderBooks(books);
+        renderCharts(stats);
+    } catch (e) { console.error(e); }
+}
+
+function renderUsers(users) {
+    const table = document.getElementById('user-table');
+    const search = document.getElementById('search-users').value.toLowerCase();
+    table.innerHTML = '';
+    users.filter(u => u.username.toLowerCase().includes(search) || u.email.toLowerCase().includes(search)).forEach(u => {
+        table.innerHTML += `<tr>
+            <td style="font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">${u.username[0].toUpperCase()}</div>
+                ${u.username}
+            </td>
+            <td style="color: var(--text-muted);">${u.email}</td>
+            <td><span class="badge">${u.role}</span></td>
+            <td style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
+                <button onclick='editUser(${JSON.stringify(u)})' style="color: var(--primary); background: none; border: none; cursor: pointer; padding: 4px;"><span class="material-symbols-rounded">edit</span></button>
+                <button onclick="deleteUser('${u.username}')" style="color: #e63946; background: none; border: none; cursor: pointer; padding: 4px;"><span class="material-symbols-rounded">delete</span></button>
+            </td>
+        </tr>`;
+    });
+}
+
+function editUser(user) {
+    const form = document.getElementById('form-edit-user');
+    form.original_username.value = user.username;
+    form.username.value = user.username;
+    form.email.value = user.email;
+    form.role.value = user.role;
+    openModal('modal-edit-user');
+}
+
+async function deleteUser(username) {
+    if (confirm(`¿Eliminar usuario "${username}"?`)) {
+        const res = await fetch(`/api/users/${username}`, { method: 'DELETE' });
+        if (res.ok) loadData();
+    }
+}
+
+document.getElementById('form-edit-user').onsubmit = async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    const original = data.original_username;
+
+    // Update role
+    if (data.role) {
+        await fetch(`/api/users/${original}/role`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: data.role })
         });
-    } catch (e) { console.error('Error loading data:', e); }
+    }
+
+    // Update profile fields
+    const payload = {};
+    if (data.username !== original) payload.username = data.username;
+    if (data.email) payload.email = data.email;
+    if (Object.keys(payload).length > 0) {
+        await fetch(`/api/users/${original}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    }
+
+    closeModal('modal-edit-user');
+    loadData();
+};
+
+function renderBooks(books) {
+    const table = document.getElementById('book-table');
+    const search = document.getElementById('search-books').value.toLowerCase();
+    table.innerHTML = '';
+    books.filter(b => b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search) || b.genre.toLowerCase().includes(search)).forEach(b => {
+        table.innerHTML += `<tr>
+            <td style="font-weight: 600;">${b.title}</td>
+            <td>${b.author}</td>
+            <td style="color: var(--text-muted);">${b.year}</td>
+            <td><span class="badge">${b.genre}</span></td>
+            <td style="text-align: right; display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick='editBook(${JSON.stringify(b)})' style="color: var(--primary); background: none; border: none; cursor: pointer;"><span class="material-symbols-rounded">edit</span></button>
+                <button onclick="deleteBook(${b.id})" style="color: #e63946; background: none; border: none; cursor: pointer;"><span class="material-symbols-rounded">delete</span></button>
+            </td>
+        </tr>`;
+    });
 }
 
 function editBook(book) {
@@ -210,71 +351,131 @@ function editBook(book) {
     form.language.value = book.language || '';
     form.format.value = book.format || '';
     form.pages.value = book.pages || '';
+    form.buy_link.value = book.buy_link || '';
+    form.tags.value = book.tags || '';
     openModal('modal-edit-book');
 }
 
-async function deleteBook(id) { 
-    if(confirm('¿Eliminar libro?')) { 
-        const res = await fetch(`/api/books/${id}`, {method:'DELETE'}); 
-        if(res.ok) loadData(); 
-    } 
-}
+async function deleteBook(id) { if (confirm('¿Eliminar libro?')) { const res = await fetch(`/api/books/${id}`, { method: 'DELETE' }); if (res.ok) loadData(); } }
 
-async function deleteUser(u) { 
-    if(confirm('¿Eliminar usuario?')) { 
-        const res = await fetch(`/api/users/${u}`, {method:'DELETE'}); 
-        if(res.ok) loadData(); 
-    } 
-}
+document.getElementById('search-users').oninput = async () => {
+    const res = await fetch('/api/users');
+    renderUsers(await res.json());
+};
+document.getElementById('search-books').oninput = async () => {
+    const res = await fetch('/api/books');
+    renderBooks(await res.json());
+};
 
+// Forms
 document.getElementById('form-user').onsubmit = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.target));
-    const res = await fetch('/api/users', { 
-        method:'POST', 
-        headers:{'Content-Type':'application/json'}, 
-        body:JSON.stringify(data)
-    });
-    if(res.ok) {
-        closeModal('modal-add-user'); 
-        e.target.reset(); 
-        loadData();
-    }
+    const res = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (res.ok) { closeModal('modal-add-user'); e.target.reset(); loadData(); }
 };
 
 document.getElementById('form-add-book').onsubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const res = await fetch('/api/books', { 
-        method:'POST', 
-        body: formData
-    });
-    if(res.ok) {
-        closeModal('modal-add-book'); 
-        e.target.reset(); 
-        loadData();
-    }
+    const fd = new FormData(e.target);
+    if (!fd.get('title').trim()) return alert('El título es obligatorio');
+    if (!fd.get('author').trim()) return alert('El autor es obligatorio');
+    if (!fd.get('year').trim() || isNaN(fd.get('year'))) return alert('El año debe ser un número');
+    if (!fd.get('genre').trim()) return alert('El género es obligatorio');
+    const res = await fetch('/api/books', { method: 'POST', body: fd });
+    if (res.ok) { closeModal('modal-add-book'); e.target.reset(); loadData(); }
 };
 
 document.getElementById('form-edit-book').onsubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const id = formData.get('id');
-    
-    const res = await fetch(`/api/books/${id}`, { 
-        method:'PUT', 
-        body: formData
-    });
-    if(res.ok) {
-        closeModal('modal-edit-book'); 
-        loadData();
-    }
+    const fd = new FormData(e.target);
+    if (!fd.get('title').trim()) return alert('El título es obligatorio');
+    if (!fd.get('author').trim()) return alert('El autor es obligatorio');
+    const id = fd.get('id');
+    const res = await fetch(`/api/books/${id}`, { method: 'PUT', body: fd });
+    if (res.ok) { closeModal('modal-edit-book'); loadData(); }
 };
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadData);
-} else {
-    loadData();
+// ISBN lookup
+async function fetchBookByISBN() {
+    const isbn = document.getElementById('isbn-search').value.trim();
+    if (!isbn) return alert('Por favor, ingrese un ISBN.');
+    const btn = document.querySelector('button[onclick="fetchBookByISBN()"]');
+    const original = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-rounded animate-spin">refresh</span>';
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/api/books/fetch-by-isbn?isbn=${encodeURIComponent(isbn)}`);
+        const data = await res.json();
+        if (!res.ok) { alert(data.error); } else {
+            const form = document.getElementById('form-add-book');
+            form.title.value = data.title || '';
+            form.author.value = data.author || '';
+            form.year.value = data.year || '';
+            form.genre.value = data.genre || '';
+            form.description.value = data.description || '';
+            form.isbn.value = isbn;
+            form.language.value = data.language || '';
+            form.pages.value = data.pages || '';
+            btn.style.background = '#2ecc71';
+            setTimeout(() => { btn.style.background = ''; }, 2000);
+        }
+    } catch (e) { alert('Error al conectar.'); }
+    finally { btn.innerHTML = original; btn.disabled = false; }
 }
+
+// Charts
+function renderCharts(stats) {
+    if (chartFavs) { chartFavs.destroy(); }
+    if (chartReviewers) { chartReviewers.destroy(); }
+
+    const favCtx = document.getElementById('chart-favs').getContext('2d');
+    chartFavs = new Chart(favCtx, {
+        type: 'bar',
+        data: {
+            labels: stats.top_favorited.map(b => b.title.length > 20 ? b.title.slice(0, 18) + '...' : b.title),
+            datasets: [{
+                label: 'Favoritos',
+                data: stats.top_favorited.map(b => b.count),
+                backgroundColor: '#e63946',
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+
+    const revCtx = document.getElementById('chart-reviewers').getContext('2d');
+    chartReviewers = new Chart(revCtx, {
+        type: 'bar',
+        data: {
+            labels: stats.top_reviewers.map(u => u.username),
+            datasets: [{
+                label: 'Reseñas',
+                data: stats.top_reviewers.map(u => u.count),
+                backgroundColor: '#f59e0b',
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+}
+
+// Activity Logs
+async function loadLogs() {
+    try {
+        const res = await fetch('/api/activity-logs');
+        const logs = await res.json();
+        const table = document.getElementById('logs-table');
+        table.innerHTML = logs.map(log => `<tr>
+            <td style="color: var(--text-muted); font-size: 0.85rem;">${log.created_at ? log.created_at.slice(0, 19).replace('T', ' ') : ''}</td>
+            <td style="font-weight: 600;">${log.username}</td>
+            <td><span class="badge">${log.action}</span></td>
+            <td style="color: var(--text-muted);">${log.detail || ''}</td>
+        </tr>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadData);
+else loadData();
 </script>
 {% endblock %}

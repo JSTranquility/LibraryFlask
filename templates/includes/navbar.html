@@ -1,38 +1,46 @@
 <header class="site-header">
     <div class="app-container nav-content">
-        <a href="/" class="logo">LIBRERÍA</a>
+        <a href="/" class="logo">VELLUM</a>
         <nav class="nav-links">
             <a href="/catalog" class="nav-link {% if active_page == 'catalog' %}active{% endif %}">Catálogo</a>
+            <a href="/community" class="nav-link {% if active_page == 'community' %}active{% endif %}">Comunidad</a>
+            <a href="/api/docs" class="nav-link {% if active_page == 'api_docs' %}active{% endif %}">API</a>
             
-            {% if user %}
+            {% if current_user %}
                 <!-- Config / User Dropdown -->
                 <div class="nav-dropdown">
-                    <button class="nav-link icon-only" title="Configuración">
-                        <span class="material-symbols-rounded">settings</span>
+                    <button class="nav-link icon-only" title="Configuración" style="border-radius: 50%; overflow: hidden; padding: 0; width: 36px; height: 36px; border: 2px solid var(--primary);">
+                        {% if current_user.profile_pic %}
+                            <img src="{{ current_user.profile_pic }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                        {% else %}
+                            <span class="material-symbols-rounded" style="font-size: 20px;">person</span>
+                        {% endif %}
                     </button>
                     <div class="dropdown-menu">
                         <div style="padding: 8px 16px; border-bottom: 1px solid var(--border); margin-bottom: 8px;">
-                            <span style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Hola, {{ user.username }}</span>
+                            <span style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Hola, {{ current_user.username }}</span>
                         </div>
                         
-                        {% if user.role == 'admin' %}
+                        {% if current_user.role == 'admin' %}
                             <a href="/admin" class="dropdown-item">
                                 <span class="material-symbols-rounded">admin_panel_settings</span>
                                 Gestión Admin
                             </a>
                         {% endif %}
                         
-                        <a href="{{ url_for('user_dashboard', username=user.username) }}" class="dropdown-item">
+                        <a href="{{ url_for('user_dashboard', username=current_user.username) }}" class="dropdown-item">
                             <span class="material-symbols-rounded">person</span>
                             Mi Perfil
                         </a>
+
+                        <div style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
+                        
+                        <a href="/logout" class="dropdown-item" style="color: #e63946;">
+                            <span class="material-symbols-rounded">logout</span>
+                            Cerrar Sesión
+                        </a>
                     </div>
                 </div>
-
-                <!-- Logout Icon -->
-                <a href="/logout" class="nav-link icon-only" style="color: #e63946;" title="Salir">
-                    <span class="material-symbols-rounded">logout</span>
-                </a>
             {% else %}
                 <a href="/login" class="nav-link {% if active_page == 'login' %}active{% endif %}">Entrar</a>
             {% endif %}

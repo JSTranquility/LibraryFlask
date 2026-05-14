@@ -1,17 +1,43 @@
 {% extends "master.html" %}
 
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+<style>
+  .profile-pic-container:hover .upload-overlay { opacity: 1 !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="animate-fade" style="padding-bottom: 100px;">
     <!-- Profile Header / Cover -->
     <div style="height: 300px; background: linear-gradient(rgba(114, 82, 51, 0.7), rgba(114, 82, 51, 0.7)), url('/static/images/hero.png') center/cover; position: relative; border-bottom: 1px solid var(--border);">
         <div class="app-container" style="height: 100%; display: flex; align-items: flex-end; padding-bottom: 40px;">
             <div style="display: flex; align-items: center; gap: 32px;">
-                <div style="width: 140px; height: 140px; background: var(--surface-strong); background-image: url('/static/images/main_bg.png'); border: 4px solid white; border-radius: 40px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
-                    <span class="material-symbols-rounded" style="font-size: 5rem; color: var(--primary);">account_circle</span>
+                <div class="profile-pic-container" style="width: 140px; height: 140px; background: var(--surface-strong); background-image: url('/static/images/main_bg.png'); border: 4px solid white; border-radius: 40px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg); position: relative; overflow: hidden; {% if is_own_profile %}cursor: pointer;{% endif %}" {% if is_own_profile %}onclick="document.getElementById('profilePicInput').click()"{% endif %}>
+                    {% if user.profile_pic %}
+                        <img src="{{ user.profile_pic }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        <span class="material-symbols-rounded" style="font-size: 5rem; color: var(--primary);">account_circle</span>
+                    {% endif %}
+                    {% if is_own_profile %}
+                    <div class="upload-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;">
+                        <span class="material-symbols-rounded" style="color: white;">photo_camera</span>
+                    </div>
+                    {% endif %}
                 </div>
+                {% if is_own_profile %}<input type="file" id="profilePicInput" style="display: none;" accept="image/*">{% endif %}
                 <div style="color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                    <div class="badge" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; margin-bottom: 12px;">{{ user.role | upper }}</div>
-                    <h1 class="heading-xl" style="color: white; margin-bottom: 4px;">{{ user.username }}</h1>
+
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <h1 class="heading-xl" style="color: white; margin-bottom: 0;">{{ user.username }}</h1>
+                        {% if not is_own_profile %}
+                            {% if following %}
+                                <button class="btn btn-primary" onclick="unfollowUser({{ user.id }})" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3);">Siguiendo</button>
+                            {% else %}
+                                <button class="btn btn-primary" onclick="followUser({{ user.id }})">Seguir</button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                     <p style="font-size: 1.1rem; opacity: 0.9;">Miembro desde 2026</p>
                 </div>
             </div>
@@ -40,16 +66,19 @@
                 </div>
 
                 <div style="margin-top: 48px; display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn btn-outline" style="width: 100%;">
-                        <span class="material-symbols-rounded">edit</span> Editar Perfil
-                    </button>
-                    <a href="/logout" class="btn btn-primary" style="width: 100%; text-align: center; background: #e63946; border-color: #e63946;">
-                        <span class="material-symbols-rounded">logout</span> Cerrar Sesión
-                    </a>
+                    {% if is_own_profile %}
+                        <button class="btn btn-outline" style="width: 100%;" onclick="openEditProfileModal()">
+                            <span class="material-symbols-rounded">edit</span> Editar Perfil
+                        </button>
+                        <a href="/logout" class="btn btn-primary" style="width: 100%; text-align: center; background: #e63946; border-color: #e63946;">
+                            <span class="material-symbols-rounded">logout</span> Cerrar Sesión
+                        </a>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- Activity / Settings Area -->
+            <!-- Activity / Settings Area (ONLY FOR OWNER) -->
+            {% if is_own_profile %}
             <div style="background: var(--surface); padding: 48px; border-radius: var(--radius-lg); border: 1px solid var(--border-muted);">
                 <h2 class="heading-md" style="margin-bottom: 24px;">Configuración de Seguridad</h2>
                 <p style="color: var(--text-muted); margin-bottom: 40px;">Administra tus credenciales y preferencias de seguridad.</p>
@@ -58,9 +87,9 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: white; border-radius: var(--radius-md); border: 1px solid var(--border);">
                         <div>
                             <span style="font-weight: 700; display: block;">Contraseña</span>
-                            <span style="color: var(--text-muted); font-size: 0.9rem;">Actualizada hace 2 meses</span>
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">Actualizar contraseña de acceso</span>
                         </div>
-                        <button class="btn-outline" style="padding: 8px 16px;">Cambiar</button>
+                        <button class="btn-outline" style="padding: 8px 16px;" onclick="openEditProfileModal()">Cambiar</button>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: white; border-radius: var(--radius-md); border: 1px solid var(--border);">
                         <div>
@@ -71,7 +100,486 @@
                     </div>
                 </div>
             </div>
+            {% else %}
+            <!-- Public Activity / Bio (FOR VISITORS) -->
+            <div style="background: var(--surface); padding: 48px; border-radius: var(--radius-lg); border: 1px solid var(--border-muted); text-align: center;">
+                <span class="material-symbols-rounded" style="font-size: 4rem; color: var(--secondary); margin-bottom: 20px;">auto_stories</span>
+                <h2 class="heading-md">Muro de Lectura</h2>
+                <p style="color: var(--text-muted);">Sigue a este usuario para ver su actividad y recomendaciones literarias.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- User Library Section -->
+    <div class="app-container" style="margin-top: 60px;">
+        <h2 class="heading-lg" style="margin-bottom: 32px; padding-bottom: 12px; border-bottom: 2px solid var(--border);">Mi Biblioteca</h2>
+        
+        <!-- Tabs -->
+        <div style="display: flex; gap: 24px; margin-bottom: 32px; border-bottom: 1px solid var(--border-muted);">
+            <button id="btn-tab-posts" class="tab-btn" onclick="switchTab('posts')" style="padding: 12px 24px; background: none; border: none; border-bottom: 2px solid var(--primary); font-weight: 700; color: var(--primary); cursor: pointer; font-size: 1.1rem;">Muro</button>
+            {% if is_own_profile %}
+                <button id="btn-tab-feed" class="tab-btn" onclick="switchTab('feed')" style="padding: 12px 24px; background: none; border: none; border-bottom: 2px solid transparent; font-weight: 600; color: var(--text-muted); cursor: pointer; font-size: 1.1rem;">Actividad Seguidores</button>
+            {% endif %}
+            <button id="btn-tab-favorites" class="tab-btn" onclick="switchTab('favorites')" style="padding: 12px 24px; background: none; border: none; border-bottom: 2px solid transparent; font-weight: 600; color: var(--text-muted); cursor: pointer; font-size: 1.1rem;">{% if is_own_profile %}Mis Favoritos{% else %}Favoritos{% endif %}</button>
+            <button id="btn-tab-reading" class="tab-btn" onclick="switchTab('reading')" style="padding: 12px 24px; background: none; border: none; border-bottom: 2px solid transparent; font-weight: 600; color: var(--text-muted); cursor: pointer; font-size: 1.1rem;">{% if is_own_profile %}Lista de Lectura{% else %}Leyendo{% endif %}</button>
+        </div>
+
+        <!-- Posts Tab -->
+        <div id="tab-posts" style="display: flex; flex-direction: column; gap: 24px;">
+            {% if is_own_profile %}
+                <!-- Post Creator (Premium Redesign) -->
+                <div style="background: var(--surface-strong); background-image: url('/static/images/main_bg.png'); padding: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-lg); margin-bottom: 40px;">
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <div style="width: 52px; height: 52px; border-radius: 18px; overflow: hidden; background: var(--surface); border: 1px solid var(--border); flex-shrink: 0; box-shadow: var(--shadow-sm);">
+                            {% if current_user.profile_pic %}
+                                <img src="{{ current_user.profile_pic }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--primary); color: white;">
+                                    <span class="material-symbols-rounded">person</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <textarea id="postContent" style="flex-grow: 1; background: transparent; border: none; outline: none; font-size: 1.2rem; font-family: inherit; resize: none; min-height: 100px; color: var(--text-main); padding-top: 8px;" placeholder="¿Qué tienes en mente, {{ current_user.username }}?"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid var(--border-muted);">
+                        <div style="display: flex; align-items: center; gap: 10px; background: rgba(var(--primary-rgb), 0.05); padding: 8px 20px; border-radius: 100px; border: 1px solid var(--border);">
+                            <span class="material-symbols-rounded" style="font-size: 1.2rem; color: var(--primary);">auto_stories</span>
+                            <select id="postBookId" style="background: transparent; border: none; outline: none; font-size: 0.9rem; color: var(--text-main); font-weight: 700; cursor: pointer; padding: 2px 0;">
+                                <option value="">Mencionar un libro...</option>
+                                {% for b in reading_books %} <option value="{{ b.id }}">📖 {{ b.title }}</option> {% endfor %}
+                                {% for b in fav_books %} <option value="{{ b.id }}">⭐ {{ b.title }}</option> {% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="submitPost()" style="padding: 12px 28px; border-radius: 100px; display: flex; align-items: center; gap: 8px; font-weight: 700; transform: translateY(0); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            Publicar
+                            <span class="material-symbols-rounded" style="font-size: 1.1rem;">send</span>
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if posts %}
+                {% for post in posts %}
+                    <div class="premium-card animate-fade" style="padding: 32px; border-radius: var(--radius-lg); position: relative;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; overflow: hidden;">
+                                    {% if user.profile_pic %}
+                                        <img src="{{ user.profile_pic }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                        <span class="material-symbols-rounded" style="font-size: 2.5rem; color: var(--primary);">account_circle</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span style="display: block; font-weight: 700;">{{ user.username }}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">{{ post.created_at[:16] }}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                {% if post.book_title %}
+                                    <div class="badge" style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary); border: none;">
+                                        <span class="material-symbols-rounded" style="font-size: 1rem;">book</span>
+                                        {{ post.book_title }}
+                                    </div>
+                                {% endif %}
+                                
+                                {% if current_user.role == 'admin' %}
+                                    <button onclick="deletePost({{ post.id }})" style="background: none; border: none; color: #e63946; cursor: pointer; padding: 4px; display: flex; align-items: center; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Eliminar Post">
+                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">delete</span>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; margin-bottom: 24px;">{{ post.content }}</p>
+
+                        <!-- Actions & Comments -->
+                        <div style="border-top: 1px solid var(--border-muted); padding-top: 16px;">
+                            <button onclick="toggleComments({{ post.id }})" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 0;">
+                                <span class="material-symbols-rounded" style="font-size: 1.2rem;">chat_bubble</span>
+                                Comentar
+                            </button>
+                            
+                            <div id="comments-container-{{ post.id }}" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.02); border-radius: var(--radius-md);">
+                                <div id="comments-list-{{ post.id }}" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                                    <!-- Comments load here -->
+                                </div>
+                                
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="comment-input-{{ post.id }}" class="form-input" placeholder="Escribe un comentario..." style="height: 36px; font-size: 0.85rem;">
+                                    <button class="btn btn-primary" onclick="submitComment({{ post.id }})" style="height: 36px; padding: 0 16px; font-size: 0.85rem;">Enviar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 60px; background: var(--surface); border-radius: var(--radius-md); border: 1px dashed var(--border);">
+                    <span class="material-symbols-rounded" style="font-size: 3rem; color: var(--border-strong); margin-bottom: 12px;">chat_bubble_outline</span>
+                    <p style="color: var(--text-muted);">Aún no hay pensamientos publicados.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Activity Feed Tab -->
+        {% if is_own_profile %}
+        <div id="tab-feed" style="display: none; flex-direction: column; gap: 16px;">
+            {% if feed %}
+                {% for item in feed %}
+                    <div class="premium-card animate-fade" style="padding: 20px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 20px;">
+                        <div style="width: 50px; height: 50px; border-radius: 16px; overflow: hidden; background: var(--surface-strong); flex-shrink: 0;">
+                            {% if item.profile_pic %}
+                                <img src="{{ item.profile_pic }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <span class="material-symbols-rounded" style="font-size: 3rem; color: var(--primary);">account_circle</span>
+                            {% endif %}
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <p style="margin-bottom: 4px;">
+                                <a href="/user/{{ item.username }}" style="color: var(--text-main); text-decoration: none; font-weight: 700; border-bottom: 1px solid transparent; transition: border 0.2s;" onmouseover="this.style.borderBottomColor='var(--primary)'" onmouseout="this.style.borderBottomColor='transparent'">{{ item.username }}</a> 
+                                {% if item.type == 'review' %} ha reseñado 
+                                {% else %} ha actualizado su estado de lectura de 
+                                {% endif %}
+                                <a href="/book/{{ item.book_id }}" style="color: var(--primary); font-weight: 700; text-decoration: none;">{{ item.book_title }}</a>
+                            </p>
+                            {% if item.type == 'review' %}
+                                <div style="display: flex; color: #f59e0b; font-size: 0.8rem; margin-bottom: 8px;">
+                                    {% for i in range(item.data|int) %}★{% endfor %}
+                                </div>
+                                <p style="font-style: italic; color: var(--text-muted); font-size: 0.9rem;">"{{ item.comment }}"</p>
+                            {% else %}
+                                <div class="badge" style="font-size: 0.7rem;">{{ item.data | replace('_', ' ') | title }}</div>
+                            {% endif %}
+                        </div>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Reciente</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-muted); padding: 40px; text-align: center; background: var(--surface); border-radius: var(--radius-md);">No hay actividad reciente de tus seguidos.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Favorites Tab -->
+        <div id="tab-favorites" style="display: none; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px;">
+            {% if fav_books %}
+                {% for book in fav_books %}
+                    <div class="premium-card animate-fade" style="padding: 16px; border-radius: 12px; cursor: pointer; position: relative;" onclick="window.location.href='/book/{{ book.id }}'">
+                        <span class="material-symbols-rounded" style="position: absolute; top: 24px; right: 24px; color: #e63946; background: rgba(255,255,255,0.9); border-radius: 50%; padding: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-variation-settings: 'FILL' 1; z-index: 2;">favorite</span>
+                        <div class="card-image-stub" style="height: 220px; background-image: url('{% if book.cover %}{{ book.cover }}{% elif book.title == '1984' %}/static/images/1984.jpg{% elif book.title == 'The Great Gatsby' %}/static/images/gatsby.jpg{% elif book.title == 'To Kill a Mockingbird' %}/static/images/mockingbird.png{% else %}/static/images/book_cover.png{% endif %}'); background-size: cover; background-position: center; margin-bottom: 12px; border-radius: 8px;"></div>
+                        <h3 style="font-size: 1rem; line-height: 1.3; margin-bottom: 2px; font-weight: 800;">{{ book.title }}</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">{{ book.author }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-muted); grid-column: 1 / -1; padding: 40px; text-align: center; background: var(--surface); border-radius: var(--radius-md);">Aún no tienes libros favoritos.</p>
+            {% endif %}
+        </div>
+
+        <div id="tab-reading" style="display: none; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px;">
+            {% if reading_books %}
+                {% for book in reading_books %}
+                    <div class="premium-card animate-fade" style="padding: 16px; border-radius: 12px; cursor: pointer; position: relative;" onclick="window.location.href='/book/{{ book.id }}'">
+                        <div class="badge" style="position: absolute; top: 24px; right: 24px; z-index: 2; font-size: 0.7rem; padding: 4px 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                            {% set status = reading_statuses.get(book.id) %}
+                            {% if status == 'reading' %} Leyendo
+                            {% elif status == 'to_read' %} Por Leer
+                            {% elif status == 'read' %} Leído
+                            {% endif %}
+                        </div>
+                        <div class="card-image-stub" style="height: 220px; background-image: url('{% if book.cover %}{{ book.cover }}{% elif book.title == '1984' %}/static/images/1984.jpg{% elif book.title == 'The Great Gatsby' %}/static/images/gatsby.jpg{% elif book.title == 'To Kill a Mockingbird' %}/static/images/mockingbird.png{% else %}/static/images/book_cover.png{% endif %}'); background-size: cover; background-position: center; margin-bottom: 12px; border-radius: 8px;"></div>
+                        <h3 style="font-size: 1rem; line-height: 1.3; margin-bottom: 2px; font-weight: 800;">{{ book.title }}</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">{{ book.author }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-muted); grid-column: 1 / -1; padding: 40px; text-align: center; background: var(--surface); border-radius: var(--radius-md);">No tienes libros en tu lista de lectura.</p>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Crop Modal -->
+<div id="cropModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px;">
+        <h3 class="heading-md" style="margin-bottom: 16px;">Recortar Foto</h3>
+        <div style="max-height: 400px; overflow: hidden; margin-bottom: 16px;">
+            <img id="imageToCrop" src="" style="max-width: 100%;">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button class="btn btn-outline" onclick="closeCropModal()">Cancelar</button>
+            <button class="btn btn-primary" id="btnCrop">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: var(--shadow-xl);">
+        <h3 class="heading-md" style="margin-bottom: 24px;">Editar Perfil</h3>
+        <form id="editProfileForm">
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">Nombre de Usuario</label>
+                <input type="text" id="editUsername" value="{{ user.username }}" class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">Correo Electrónico</label>
+                <input type="email" id="editEmail" value="{{ user.email }}" class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">Nueva Contraseña (Opcional)</label>
+                <input type="password" id="editPassword" placeholder="Dejar en blanco para no cambiar" class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" class="btn btn-outline" onclick="closeEditProfileModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="btnSaveProfile">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+    let cropper;
+    const input = document.getElementById('profilePicInput');
+    const modal = document.getElementById('cropModal');
+    const imageToCrop = document.getElementById('imageToCrop');
+
+    input.addEventListener('change', function (e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                imageToCrop.src = e.target.result;
+                modal.style.display = 'flex';
+                if (cropper) {
+                    cropper.destroy();
+                }
+                cropper = new Cropper(imageToCrop, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                });
+            };
+            reader.readAsDataURL(files[0]);
+        }
+        input.value = ''; // Reset
+    });
+
+    function closeCropModal() {
+        modal.style.display = 'none';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    }
+
+    document.getElementById('btnCrop').addEventListener('click', function () {
+        if (!cropper) return;
+        
+        const originalBtnText = this.innerHTML;
+        this.innerHTML = 'Guardando...';
+        this.disabled = true;
+
+        cropper.getCroppedCanvas({
+            width: 300,
+            height: 300
+        }).toBlob(function (blob) {
+            const formData = new FormData();
+            formData.append('croppedImage', blob, 'profile.png');
+
+            fetch('/api/users/{{ user.username }}/profile_pic', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    location.reload();
+                } else {
+                    alert('Error al subir la imagen: ' + (data.error || 'Desconocido'));
+                    document.getElementById('btnCrop').innerHTML = originalBtnText;
+                    document.getElementById('btnCrop').disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error de conexión.');
+                document.getElementById('btnCrop').innerHTML = originalBtnText;
+                document.getElementById('btnCrop').disabled = false;
+            });
+        }, 'image/png');
+    });
+
+    // --- Edit Profile Logic ---
+    const editModal = document.getElementById('editProfileModal');
+    const editForm = document.getElementById('editProfileForm');
+
+    function openEditProfileModal() {
+        editModal.style.display = 'flex';
+    }
+
+    function closeEditProfileModal() {
+        editModal.style.display = 'none';
+        document.getElementById('editPassword').value = ''; // clear password field
+    }
+
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('editEmail').value;
+        const password = document.getElementById('editPassword').value;
+        const newUsername = document.getElementById('editUsername').value;
+        const btnSave = document.getElementById('btnSaveProfile');
+        
+        const originalBtnText = btnSave.innerHTML;
+        btnSave.innerHTML = 'Guardando...';
+        btnSave.disabled = true;
+
+        fetch('/api/users/{{ user.username }}/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username: newUsername, email: email, password: password })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert('Error al actualizar el perfil: ' + (data.error || 'Desconocido'));
+                btnSave.innerHTML = originalBtnText;
+                btnSave.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión.');
+            btnSave.innerHTML = originalBtnText;
+            btnSave.disabled = false;
+        });
+    });
+
+    function switchTab(tab) {
+        const tabs = ['posts', 'feed', 'favorites', 'reading'];
+        tabs.forEach(t => {
+            const el = document.getElementById(`tab-${t}`);
+            const btn = document.getElementById(`btn-tab-${t}`);
+            if (el) el.style.display = (tab === t) ? (t === 'posts' || t === 'feed' ? 'flex' : 'grid') : 'none';
+            if (btn) {
+                btn.style.borderBottomColor = (tab === t) ? 'var(--primary)' : 'transparent';
+                btn.style.color = (tab === t) ? 'var(--primary)' : 'var(--text-muted)';
+                btn.style.fontWeight = (tab === t) ? '700' : '600';
+            }
+        });
+    }
+
+    function submitPost() {
+        const content = document.getElementById('postContent').value;
+        const bookId = document.getElementById('postBookId').value;
+        
+        if (!content.trim()) return alert('El contenido no puede estar vacío.');
+        
+        fetch('/api/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content, book_id: bookId || null })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) alert(data.error);
+            else location.reload();
+        });
+    }
+
+    async function deletePost(postId) {
+        if (!confirm('¿Estás seguro de que quieres eliminar esta publicación?')) return;
+        
+        const res = await fetch(`/api/posts/${postId}`, { method: 'DELETE' });
+        if (res.ok) {
+            location.reload();
+        } else {
+            const data = await res.json();
+            alert('Error: ' + (data.error || 'No se pudo eliminar el post.'));
+        }
+    }
+
+    async function toggleComments(postId) {
+        const container = document.getElementById(`comments-container-${postId}`);
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            loadComments(postId);
+        } else {
+            container.style.display = 'none';
+        }
+    }
+
+    async function loadComments(postId) {
+        const list = document.getElementById(`comments-list-${postId}`);
+        list.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted);">Cargando comentarios...</p>';
+        
+        const res = await fetch(`/api/posts/${postId}/comments`);
+        const comments = await res.json();
+        
+        if (comments.length === 0) {
+            list.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No hay comentarios aún.</p>';
+            return;
+        }
+        
+        list.innerHTML = '';
+        comments.forEach(c => {
+            list.innerHTML += `
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <div style="width: 28px; height: 28px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border);">
+                        ${c.profile_pic ? `<img src="${c.profile_pic}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span class="material-symbols-rounded" style="font-size: 1.2rem; display: flex; align-items: center; justify-content: center; height: 100%; color: var(--primary);">person</span>`}
+                    </div>
+                    <div style="background: white; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); flex-grow: 1;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+                            <span style="font-weight: 700; font-size: 0.75rem;">${c.username}</span>
+                            <span style="font-size: 0.65rem; color: var(--text-muted);">${c.created_at.substring(11, 16)}</span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: var(--text-main); line-height: 1.3;">${c.content}</p>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    async function submitComment(postId) {
+        const input = document.getElementById(`comment-input-${postId}`);
+        const content = input.value;
+        if (!content.trim()) return;
+        
+        const res = await fetch(`/api/posts/${postId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        });
+        
+        if (res.ok) {
+            input.value = '';
+            loadComments(postId);
+        } else {
+            alert('Error al publicar comentario');
+        }
+    }
+
+    async function followUser(userId) {
+        const res = await fetch(`/api/follow/${userId}`, { method: 'POST' });
+        if (res.ok) location.reload();
+    }
+
+    async function unfollowUser(userId) {
+        const res = await fetch(`/api/follow/${userId}`, { method: 'DELETE' });
+        if (res.ok) location.reload();
+    }
+</script>
 {% endblock %}

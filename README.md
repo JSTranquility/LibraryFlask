@@ -1,76 +1,71 @@
-# Librería
+# Vellum
 
-Aplicación web de biblioteca construida con Python y Flask.
+Aplicación web de biblioteca/catálogo literario construida con Python y Flask.
 
-## Descripción
+## Funcionalidades
 
-Esta aplicación permite gestionar libros y usuarios con una interfaz web. Incluye:
+- **Catálogo** con búsqueda, filtros combinados (género, idioma, año), paginación y toggle vista grid/lista
+- **Detalle de libro** con reseñas, estado de lectura, favoritos y link de compra (Amazon)
+- **Autenticación** de usuarios con roles (admin / user)
+- **Panel de administración** con dashboard, gráficos, gestión de usuarios y libros, y registro de actividad
+- **Comunidad** con posts, comentarios y sistema de seguidores
+- **API REST pública** con endpoints documentados en `/api/docs`
+- **Búsqueda por ISBN** usando Open Library API
 
-- Catálogo de libros
-- Detalles de cada libro
-- Autenticación de usuarios
-- Panel de administrador para gestionar usuarios y libros
-- API REST básica para libros y usuarios
+## Estructura
 
-## Estructura del proyecto
-
-- `main/app.py`: aplicación Flask principal
-- `main/books.py`: lógica de libros y funciones de inicialización
-- `main/db.py`: conexión y operaciones de base de datos
-- `templates/`: vistas de Flask en HTML
-- `static/`: archivos estáticos como CSS e imágenes
-- `library.db`: base de datos SQLite local (se crea automáticamente)
+```
+├── main/
+│   ├── app.py          # Aplicación Flask (rutas y API)
+│   ├── books.py        # Lógica de libros
+│   └── db.py           # Conexión y operaciones de base de datos
+├── templates/          # Vistas HTML
+│   └── includes/       # Fragmentos (navbar, footer)
+├── static/             # CSS, imágenes
+│   └── uploads/        # Imágenes subidas por usuarios
+└── library.db          # Base de datos SQLite (se crea automáticamente)
+```
 
 ## Requisitos
 
-- Python 3.9+ recomendado
+- Python 3.9+
 - Flask
 - Flask-CORS
 - Werkzeug
 
 ## Instalación
 
-1. Crear y activar un entorno virtual:
-
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-2. Instalar dependencias:
-
-```powershell
 pip install flask flask-cors werkzeug
-```
-
-3. Iniciar la aplicación:
-
-```powershell
 python .\main\app.py
 ```
 
-4. Abrir en el navegador:
-
-```text
-http://127.0.0.1:5000/
-```
+Abrir en `http://127.0.0.1:5000/`
 
 ## Usuarios iniciales
 
-La aplicación crea automáticamente los siguientes usuarios en la base de datos SQLite:
+| Usuario | Contraseña | Rol  |
+|---------|-----------|------|
+| admin   | admin123  | admin |
+| user    | user123   | user |
 
-- `admin` / `admin123` (rol: admin)
-- `user` / `user123` (rol: user)
+## API Pública
+
+La documentación interactiva está disponible en `/api/docs`. Endpoints públicos:
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/books` | Todos los libros |
+| GET | `/api/books/<id>` | Detalle de un libro |
+| GET | `/api/books/paginated` | Catálogo paginado con filtros |
+| GET | `/api/books/<id>/reviews` | Reseñas de un libro |
+| GET | `/api/books/fetch-by-isbn` | Buscar por ISBN |
+| GET | `/api/stats/reviews` | Total de reseñas |
 
 ## Notas
 
-- Si la base de datos ya existe, no se sobrescribe.
-- La aplicación usa `library.db` en la raíz del proyecto.
-- El panel de administrador solo es accesible para el usuario con rol `admin`.
-
-## Mejoras recomendadas
-
-- Añadir un archivo `requirements.txt`
-- Añadir validación de formularios en el frontend
-- Proteger las rutas de API con autenticación
-- Añadir encriptado HTTPS para producción
+- La base de datos SQLite (`library.db`) se crea automáticamente al iniciar
+- Los uploads de imágenes se guardan en `static/uploads/`
+- El panel admin solo es accesible para usuarios con rol `admin`

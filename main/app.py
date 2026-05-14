@@ -497,7 +497,7 @@ def api_get_books_paginated():
     
     if genre and genre != 'all':
         books = [b for b in books if b.get('genre', '').lower() == genre.lower()]
-    if year:
+    if year and year != 'all':
         books = [b for b in books if str(b.get('year', '')) == year]
     if language and language != 'all':
         books = [b for b in books if b.get('language', '').lower() == language.lower()]

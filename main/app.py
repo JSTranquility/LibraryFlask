@@ -153,6 +153,7 @@ def api_delete_user(username):
         return jsonify({'error': 'User not found'}), 404
 
     delete_user(username)
+
     return jsonify({'message': 'User deleted successfully'}), 200
 
 if __name__ == '__main__':

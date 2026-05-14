@@ -85,6 +85,17 @@ def get_all_users():
     conn.close()
     return [dict(id=u[0], username=u[1], email=u[2], role=u[3]) for u in users]
 
+def delete_user(username):
+    conn = database_connect()
+    c = conn.cursor()
+
+    c.execute(
+        "DELETE FROM users WHERE username = ?",
+        (username,)
+    )
+    conn.commit()
+    conn.close()
+
 def verify_password(username, password):
     conn = database_connect()
     c = conn.cursor()

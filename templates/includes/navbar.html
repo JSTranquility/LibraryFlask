@@ -1,0 +1,41 @@
+<header class="site-header">
+    <div class="app-container nav-content">
+        <a href="/" class="logo">LIBRERÍA</a>
+        <nav class="nav-links">
+            <a href="/catalog" class="nav-link {% if active_page == 'catalog' %}active{% endif %}">Catálogo</a>
+            
+            {% if user %}
+                <!-- Config / User Dropdown -->
+                <div class="nav-dropdown">
+                    <button class="nav-link icon-only" title="Configuración">
+                        <span class="material-symbols-rounded">settings</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <div style="padding: 8px 16px; border-bottom: 1px solid var(--border); margin-bottom: 8px;">
+                            <span style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Hola, {{ user.username }}</span>
+                        </div>
+                        
+                        {% if user.role == 'admin' %}
+                            <a href="/admin" class="dropdown-item">
+                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                Gestión Admin
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('user_dashboard', username=user.username) }}" class="dropdown-item">
+                            <span class="material-symbols-rounded">person</span>
+                            Mi Perfil
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Logout Icon -->
+                <a href="/logout" class="nav-link icon-only" style="color: #e63946;" title="Salir">
+                    <span class="material-symbols-rounded">logout</span>
+                </a>
+            {% else %}
+                <a href="/login" class="nav-link {% if active_page == 'login' %}active{% endif %}">Entrar</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>

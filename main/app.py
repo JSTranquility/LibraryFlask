@@ -4,6 +4,16 @@ from flask_cors import CORS
 from functools import wraps
 from books import *
 from db import *
+import os
+from werkzeug.utils import secure_filename
+
+# Configure folders relative to the project root
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+UPLOAD_FOLDER = os.path.join(STATIC_DIR, 'uploads')
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 app = fk.Flask(__name__, template_folder='../templates', static_folder='../static')
 app.secret_key = 'libreria_secret_key_123'
@@ -95,17 +105,39 @@ def api_get_books():
 
 @app.route('/api/books', methods=['POST'])
 def api_create_book():
-    data = request.get_json()
-    title = data.get('title')
-    author = data.get('author')
-    year = data.get('year')
-    genre = data.get('genre')
-    description = data.get('description', '')
+    # Soporte para JSON o FormData
+    if request.is_json:
+        data = request.get_json()
+        title = data.get('title')
+        author = data.get('author')
+        year = data.get('year')
+        genre = data.get('genre')
+        description = data.get('description', '')
+        cover_filename = None
+    else:
+        title = request.form.get('title')
+        author = request.form.get('author')
+        year = request.form.get('year')
+        genre = request.form.get('genre')
+        description = request.form.get('description', '')
+        isbn = request.form.get('isbn', '')
+        language = request.form.get('language', '')
+        format = request.form.get('format', '')
+        pages = request.form.get('pages', '')
+        
+        cover_file = request.files.get('cover')
+        cover_filename = None
+        if cover_file and cover_file.filename != '':
+            filename = secure_filename(cover_file.filename)
+            # Add unique prefix to avoid collisions
+            unique_filename = f"{os.urandom(8).hex()}_{filename}"
+            cover_file.save(os.path.join(UPLOAD_FOLDER, unique_filename))
+            cover_filename = f"/static/uploads/{unique_filename}"
 
     if not title or not author or not year or not genre:
         return jsonify({'error': 'Missing required fields'}), 400
 
-    add_book(title, author, year, genre, description)
+    add_book(title, author, year, genre, description, cover_filename, isbn, language, format, pages)
     return jsonify({'message': 'Book created successfully'}), 201
 
 @app.route('/api/books/<int:book_id>', methods=['PUT'])
@@ -113,9 +145,34 @@ def api_update_book(book_id):
     if not book_exists(book_id):
         return jsonify({'error': 'Book not found'}), 404
     
-    data = request.get_json()
-    update_book_in_db(book_id, data.get('title'), data.get('author'), 
-                      data.get('year'), data.get('genre'), data.get('description'))
+    if request.is_json:
+        data = request.get_json()
+        title = data.get('title')
+        author = data.get('author')
+        year = data.get('year')
+        genre = data.get('genre')
+        description = data.get('description')
+        cover_filename = None
+    else:
+        title = request.form.get('title')
+        author = request.form.get('author')
+        year = request.form.get('year')
+        genre = request.form.get('genre')
+        description = request.form.get('description')
+        isbn = request.form.get('isbn')
+        language = request.form.get('language')
+        format = request.form.get('format')
+        pages = request.form.get('pages')
+        
+        cover_file = request.files.get('cover')
+        cover_filename = None
+        if cover_file and cover_file.filename != '':
+            filename = secure_filename(cover_file.filename)
+            unique_filename = f"{os.urandom(8).hex()}_{filename}"
+            cover_file.save(os.path.join(UPLOAD_FOLDER, unique_filename))
+            cover_filename = f"/static/uploads/{unique_filename}"
+    
+    update_book_in_db(book_id, title, author, year, genre, description, cover_filename, isbn, language, format, pages)
     return jsonify({'message': 'Book updated successfully'}), 200
 
 @app.route('/api/books/<int:book_id>', methods=['DELETE'])
@@ -157,7 +214,4 @@ def api_delete_user(username):
     return jsonify({'message': 'User deleted successfully'}), 200
 
 if __name__ == '__main__':
-    create_database()
-    initialize_books()
-    initialize_users()
     app.run(debug=True)

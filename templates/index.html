@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "master.html" %}
 
 {% block title %}Librería Boutique - Inicio{% endblock %}
 
@@ -39,13 +39,14 @@
 
 {% block scripts %}
 <script>
-function getCoverPath(title) {
+function getCoverPath(book) {
+    if (book.cover) return book.cover;
     const covers = {
         '1984': '/static/images/1984.jpg',
         'The Great Gatsby': '/static/images/gatsby.jpg',
         'To Kill a Mockingbird': '/static/images/mockingbird.png'
     };
-    return covers[title] || '/static/images/book_cover.png';
+    return covers[book.title] || '/static/images/book_cover.png';
 }
 
 async function loadBooks() {
@@ -78,7 +79,7 @@ async function loadBooks() {
             `;
             card.onclick = () => window.location.href = `/book/${book.id}`;
             
-            const cover = getCoverPath(book.title);
+            const cover = getCoverPath(book);
             card.innerHTML = `
                 <div class="card-image-stub" style="background-image: url('${cover}'); height: 220px; border-radius: 8px; margin-bottom: 12px;">
                     ${cover.includes('book_cover.png') ? '<span class="material-symbols-rounded" style="font-size: 2.5rem; opacity: 0.3;">auto_stories</span>' : ''}

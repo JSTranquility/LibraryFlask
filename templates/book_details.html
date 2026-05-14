@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "master.html" %}
 
 {% block title %}{{ book.title }} - Detalles{% endblock %}
 
@@ -48,19 +48,19 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 32px; background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border);">
                 <div>
                     <span style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">ISBN</span>
-                    <span style="font-weight: 600;">978-3-16-148410-0</span>
+                    <span style="font-weight: 600;">{{ book.isbn if book.isbn else 'No disponible' }}</span>
                 </div>
                 <div>
                     <span style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Idioma</span>
-                    <span style="font-weight: 600;">Español / Inglés</span>
+                    <span style="font-weight: 600;">{{ book.language if book.language else 'No disponible' }}</span>
                 </div>
                 <div>
                     <span style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Formato</span>
-                    <span style="font-weight: 600;">Tapa Dura / Digital</span>
+                    <span style="font-weight: 600;">{{ book.format if book.format else 'No disponible' }}</span>
                 </div>
                 <div>
                     <span style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Páginas</span>
-                    <span style="font-weight: 600;">~350 páginas</span>
+                    <span style="font-weight: 600;">{{ book.pages if book.pages else 'No disponible' }}</span>
                 </div>
             </div>
 
@@ -76,19 +76,23 @@
 
 {% block scripts %}
 <script>
-    function getCoverPath(title) {
+    function getCoverPath(book) {
+        if (book.cover) return book.cover;
         const covers = {
             '1984': '/static/images/1984.jpg',
             'The Great Gatsby': '/static/images/gatsby.jpg',
             'To Kill a Mockingbird': '/static/images/mockingbird.png'
         };
-        return covers[title] || '/static/images/book_cover.png';
+        return covers[book.title] || '/static/images/book_cover.png';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const title = "{{ book.title }}";
+        const book = {
+            title: "{{ book.title }}",
+            cover: "{{ book.cover if book.cover else '' }}"
+        };
         const coverImg = document.getElementById('book-cover-large');
-        coverImg.src = getCoverPath(title);
+        coverImg.src = getCoverPath(book);
     });
 </script>
 {% endblock %}

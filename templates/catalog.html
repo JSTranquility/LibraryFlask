@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "master.html" %}
 
 {% block title %}Catálogo Completo - Librería Boutique{% endblock %}
 
@@ -56,13 +56,14 @@ let filters = {
     search: ''
 };
 
-function getCoverPath(title) {
+function getCoverPath(book) {
+    if (book.cover) return book.cover;
     const covers = {
         '1984': '/static/images/1984.jpg',
         'The Great Gatsby': '/static/images/gatsby.jpg',
         'To Kill a Mockingbird': '/static/images/mockingbird.png'
     };
-    return covers[title] || '/static/images/book_cover.png';
+    return covers[book.title] || '/static/images/book_cover.png';
 }
 
 async function initCatalog() {
@@ -109,7 +110,7 @@ function renderBooks() {
         empty.style.display = 'none';
         
         filtered.forEach((book, index) => {
-            const cover = getCoverPath(book.title);
+            const cover = getCoverPath(book);
             grid.innerHTML += `
                 <div class="premium-card animate-fade" style="padding: 16px; border-radius: 12px; animation-delay: ${index * 0.05}s; cursor: pointer;" onclick="window.location.href='/book/${book.id}'">
                     <div class="card-image-stub" style="height: 220px; background-image: url('${cover}'); margin-bottom: 12px; border-radius: 8px;">

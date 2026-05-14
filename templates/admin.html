@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "master.html" %}
 
 {% block content %}
 <div class="app-container animate-fade" style="padding: 60px 0;">
@@ -95,6 +95,18 @@
                 <input type="number" name="year" placeholder="Año" class="form-input" required>
                 <input type="text" name="genre" placeholder="Género" class="form-input" required>
             </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <input type="text" name="isbn" placeholder="ISBN (ej. 978-...)" class="form-input">
+                <input type="text" name="language" placeholder="Idioma" class="form-input">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <input type="text" name="format" placeholder="Formato" class="form-input">
+                <input type="text" name="pages" placeholder="Nº de Páginas" class="form-input">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Portada del Libro</label>
+                <input type="file" name="cover" class="form-input" accept="image/*">
+            </div>
             <textarea name="description" placeholder="Sinopsis de la obra..." class="form-input" style="min-height: 120px; resize: vertical;"></textarea>
             <div style="display: flex; gap: 12px; margin-top: 12px;">
                 <button type="button" onclick="closeModal('modal-add-book')" class="btn btn-outline" style="flex: 1;">Cancelar</button>
@@ -115,6 +127,18 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                 <input type="number" name="year" placeholder="Año" class="form-input" required>
                 <input type="text" name="genre" placeholder="Género" class="form-input" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <input type="text" name="isbn" placeholder="ISBN" class="form-input">
+                <input type="text" name="language" placeholder="Idioma" class="form-input">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <input type="text" name="format" placeholder="Formato" class="form-input">
+                <input type="text" name="pages" placeholder="Nº de Páginas" class="form-input">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Actualizar Portada (opcional)</label>
+                <input type="file" name="cover" class="form-input" accept="image/*">
             </div>
             <textarea name="description" placeholder="Sinopsis de la obra..." class="form-input" style="min-height: 120px; resize: vertical;"></textarea>
             <div style="display: flex; gap: 12px; margin-top: 12px;">
@@ -182,6 +206,10 @@ function editBook(book) {
     form.year.value = book.year;
     form.genre.value = book.genre;
     form.description.value = book.description || '';
+    form.isbn.value = book.isbn || '';
+    form.language.value = book.language || '';
+    form.format.value = book.format || '';
+    form.pages.value = book.pages || '';
     openModal('modal-edit-book');
 }
 
@@ -216,12 +244,10 @@ document.getElementById('form-user').onsubmit = async (e) => {
 
 document.getElementById('form-add-book').onsubmit = async (e) => {
     e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.target));
-    data.year = parseInt(data.year);
+    const formData = new FormData(e.target);
     const res = await fetch('/api/books', { 
         method:'POST', 
-        headers:{'Content-Type':'application/json'}, 
-        body:JSON.stringify(data)
+        body: formData
     });
     if(res.ok) {
         closeModal('modal-add-book'); 
@@ -234,13 +260,10 @@ document.getElementById('form-edit-book').onsubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const id = formData.get('id');
-    const data = Object.fromEntries(formData.entries());
-    data.year = parseInt(data.year);
     
     const res = await fetch(`/api/books/${id}`, { 
         method:'PUT', 
-        headers:{'Content-Type':'application/json'}, 
-        body:JSON.stringify(data)
+        body: formData
     });
     if(res.ok) {
         closeModal('modal-edit-book'); 

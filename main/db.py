@@ -15,19 +15,51 @@ def create_database():
                   title TEXT NOT NULL,
                   author TEXT NOT NULL,
                   year INTEGER NOT NULL,
-                  genre TEXT NOT NULL)''')
+                  genre TEXT NOT NULL,
+                  description TEXT,
+                  cover TEXT,
+                  isbn TEXT,
+                  language TEXT,
+                  format TEXT,
+                  pages TEXT)''')
     
     # Forzar la columna description si no existe
     try:
         c.execute("ALTER TABLE books ADD COLUMN description TEXT")
     except:
         pass
+    try:
+        c.execute("ALTER TABLE books ADD COLUMN cover TEXT")
+    except:
+        pass
+    try:
+        c.execute("ALTER TABLE books ADD COLUMN isbn TEXT")
+    except:
+        pass
+    try:
+        c.execute("ALTER TABLE books ADD COLUMN language TEXT")
+    except:
+        pass
+    try:
+        c.execute("ALTER TABLE books ADD COLUMN format TEXT")
+    except:
+        pass
+    try:
+        c.execute("ALTER TABLE books ADD COLUMN pages TEXT")
+    except:
+        pass
         
     conn.commit()
     conn.close()
 
+import os
+
 def database_connect():
-    return sql.connect('library.db')
+    # Use absolute path relative to this file's parent directory (main)
+    # to point to the root folder database
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    db_path = os.path.join(base_dir, 'library.db')
+    return sql.connect(db_path)
 
 def add_user(username, password, email, role):
     if user_exists(username): return False
@@ -115,7 +147,14 @@ def get_all_books():
         for b in rows:
             # Manejo seguro de columnas
             desc = b[5] if len(b) > 5 else ""
-            books.append(dict(id=b[0], title=b[1], author=b[2], year=b[3], genre=b[4], description=desc))
+            cover = b[6] if len(b) > 6 else None
+            isbn = b[7] if len(b) > 7 else ""
+            lang = b[8] if len(b) > 8 else ""
+            fmt = b[9] if len(b) > 9 else ""
+            pag = b[10] if len(b) > 10 else ""
+            books.append(dict(id=b[0], title=b[1], author=b[2], year=b[3], genre=b[4], 
+                              description=desc, cover=cover, isbn=isbn, language=lang, 
+                              format=fmt, pages=pag))
         return books
     except Exception as e:
         print(f"Error get_all_books: {e}")
@@ -129,14 +168,21 @@ def get_book_by_id(id):
     conn.close()
     if b:
         desc = b[5] if len(b) > 5 else ""
-        return dict(id=b[0], title=b[1], author=b[2], year=b[3], genre=b[4], description=desc)
+        cover = b[6] if len(b) > 6 else None
+        isbn = b[7] if len(b) > 7 else ""
+        lang = b[8] if len(b) > 8 else ""
+        fmt = b[9] if len(b) > 9 else ""
+        pag = b[10] if len(b) > 10 else ""
+        return dict(id=b[0], title=b[1], author=b[2], year=b[3], genre=b[4], 
+                    description=desc, cover=cover, isbn=isbn, language=lang, 
+                    format=fmt, pages=pag)
     return None
 
-def add_book(title, author, year, genre, description=""):
+def add_book(title, author, year, genre, description="", cover=None, isbn="", language="", format="", pages=""):
     conn = database_connect()
     c = conn.cursor()
-    c.execute("INSERT INTO books (title, author, year, genre, description) VALUES (?,?,?,?,?)",
-              (title, author, year, genre, description))
+    c.execute("INSERT INTO books (title, author, year, genre, description, cover, isbn, language, format, pages) VALUES (?,?,?,?,?,?,?,?,?,?)",
+              (title, author, year, genre, description, cover, isbn, language, format, pages))
     conn.commit()
     conn.close()
 
@@ -155,7 +201,7 @@ def delete_book(id):
     conn.commit()
     conn.close()
 
-def update_book_in_db(id, title=None, author=None, year=None, genre=None, description=None):
+def update_book_in_db(id, title=None, author=None, year=None, genre=None, description=None, cover=None, isbn=None, language=None, format=None, pages=None):
     conn = database_connect()
     c = conn.cursor()
     if title: c.execute("UPDATE books SET title=? WHERE id=?", (title, id))
@@ -163,6 +209,11 @@ def update_book_in_db(id, title=None, author=None, year=None, genre=None, descri
     if year: c.execute("UPDATE books SET year=? WHERE id=?", (year, id))
     if genre: c.execute("UPDATE books SET genre=? WHERE id=?", (genre, id))
     if description is not None: c.execute("UPDATE books SET description=? WHERE id=?", (description, id))
+    if cover is not None: c.execute("UPDATE books SET cover=? WHERE id=?", (cover, id))
+    if isbn is not None: c.execute("UPDATE books SET isbn=? WHERE id=?", (isbn, id))
+    if language is not None: c.execute("UPDATE books SET language=? WHERE id=?", (language, id))
+    if format is not None: c.execute("UPDATE books SET format=? WHERE id=?", (format, id))
+    if pages is not None: c.execute("UPDATE books SET pages=? WHERE id=?", (pages, id))
     conn.commit()
     conn.close()
 

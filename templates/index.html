@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Librería Boutique - Inicio{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero animate-fade">
+    <div class="app-container" style="position: relative; z-index: 2;">
+        <div class="badge" style="margin-bottom: 24px;">Exclusividad & Letras</div>
+        <h1 class="heading-xl">Curaduría Literaria<br><span style="color: var(--accent)">en cada página.</span></h1>
+        <p style="color: var(--text-muted); font-size: 1.25rem; max-width: 600px; margin: 0 auto 40px;">Explora nuestra selección de obras maestras y descubre tu próxima gran lectura en un entorno diseñado para la inspiración.</p>
+        <div style="display: flex; gap: 16px; justify-content: center;">
+            <a href="/catalog" class="btn btn-primary">Explorar Catálogo</a>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Catalog -->
+<section id="catalogo" style="padding: 100px 0;">
+    <div class="app-container">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px;">
+            <div>
+                <h2 class="heading-lg" style="margin-bottom: 8px;">Novedades <span style="color: var(--accent)">Editoriales</span></h2>
+                <p style="color: var(--text-muted);">Una selección exclusiva de nuestra biblioteca.</p>
+            </div>
+            <div style="text-align: right;">
+                <span id="book-count" style="font-size: 3rem; font-weight: 800; color: var(--primary); line-height: 1; display: block;">0</span>
+                <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted);">Obras disponibles</span>
+            </div>
+        </div>
+        
+        <!-- FLEX LAYOUT PARA MANTENER TAMAÑO PEQUEÑO FIJO -->
+        <div id="book-grid" style="display: flex; flex-wrap: wrap; gap: 32px; justify-content: center;">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getCoverPath(title) {
+    const covers = {
+        '1984': '/static/images/1984.jpg',
+        'The Great Gatsby': '/static/images/gatsby.jpg',
+        'To Kill a Mockingbird': '/static/images/mockingbird.png'
+    };
+    return covers[title] || '/static/images/book_cover.png';
+}
+
+async function loadBooks() {
+    try {
+        const response = await fetch('/api/books');
+        const books = await response.json();
+        const grid = document.getElementById('book-grid');
+        const count = document.getElementById('book-count');
+        
+        count.textContent = books.length;
+        grid.innerHTML = '';
+
+        if (books.length === 0) {
+            grid.innerHTML = '<div style="text-align: center; color: var(--text-muted);">No hay libros disponibles.</div>';
+            return;
+        }
+
+        // Mostrar solo los primeros 3 destacados con tamaño fijo
+        books.slice(0, 3).forEach((book, index) => {
+            const card = document.createElement('div');
+            card.className = 'premium-card';
+            // Forzamos el ancho a 240px para que no crezca
+            card.style.cssText = `
+                width: 240px; 
+                animation-delay: ${index * 0.1}s; 
+                cursor: pointer; 
+                padding: 16px; 
+                border-radius: 12px;
+                flex-shrink: 0;
+            `;
+            card.onclick = () => window.location.href = `/book/${book.id}`;
+            
+            const cover = getCoverPath(book.title);
+            card.innerHTML = `
+                <div class="card-image-stub" style="background-image: url('${cover}'); height: 220px; border-radius: 8px; margin-bottom: 12px;">
+                    ${cover.includes('book_cover.png') ? '<span class="material-symbols-rounded" style="font-size: 2.5rem; opacity: 0.3;">auto_stories</span>' : ''}
+                </div>
+                <div style="flex-grow: 1;">
+                    <div class="badge" style="font-size: 0.7rem; padding: 4px 8px; margin-bottom: 8px; display: inline-block;">${book.genre}</div>
+                    <h3 style="font-size: 1rem; line-height: 1.3; margin-bottom: 2px; font-family: 'Raleway', sans-serif; font-weight: 800;">${book.title}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">${book.author}</p>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--border-muted);">
+                    <span style="font-weight: 700; color: var(--primary); font-size: 0.85rem;">${book.year}</span>
+                    <span class="material-symbols-rounded" style="font-size: 1rem; color: var(--border-strong);">arrow_forward</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    } catch (e) { console.error(e); }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadBooks);
+} else {
+    loadBooks();
+}
+</script>
+{% endblock %}

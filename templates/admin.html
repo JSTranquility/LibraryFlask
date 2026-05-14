@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="app-container animate-fade" style="padding: 60px 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 60px; background: var(--surface); padding: 40px; border-radius: var(--radius-lg); border: 1px solid var(--border);">
+        <div>
+            <h1 class="heading-lg" style="margin-bottom: 8px;">Centro de Control</h1>
+            <p style="color: var(--text-muted);">Administración global de usuarios y existencias</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button onclick="openModal('modal-add-user')" class="btn btn-outline">
+                <span class="material-symbols-rounded">person_add</span> Usuario
+            </button>
+            <button onclick="openModal('modal-add-book')" class="btn btn-primary">
+                <span class="material-symbols-rounded">add_circle</span> Libro
+            </button>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 60px;">
+        <!-- Usuarios -->
+        <section>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                <span class="material-symbols-rounded" style="color: var(--primary);">group</span>
+                <h2 class="heading-md" style="margin: 0;">Gestión de Usuarios</h2>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th style="text-align: right;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Libros -->
+        <section>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                <span class="material-symbols-rounded" style="color: var(--primary);">library_books</span>
+                <h2 class="heading-md" style="margin: 0;">Catálogo Maestro</h2>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Autor</th>
+                            <th>Año</th>
+                            <th>Género</th>
+                            <th style="text-align: right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="book-table"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="modal-add-user" class="modal-overlay">
+    <div class="modal-container">
+        <h2 class="heading-md">Nuevo Usuario</h2>
+        <p style="color: var(--text-muted); margin-bottom: 32px;">Complete los datos para el nuevo acceso.</p>
+        <form id="form-user" style="display: flex; flex-direction: column; gap: 20px;">
+            <input type="text" name="username" placeholder="Nombre de usuario" class="form-input" required>
+            <input type="email" name="email" placeholder="Correo electrónico" class="form-input" required>
+            <input type="password" name="password" placeholder="Contraseña segura" class="form-input" required>
+            <select name="role" class="form-input">
+                <option value="user">Usuario</option>
+                <option value="admin">Admin</option>
+            </select>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <button type="button" onclick="closeModal('modal-add-user')" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Registrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-add-book" class="modal-overlay">
+    <div class="modal-container">
+        <h2 class="heading-md">Añadir Obra</h2>
+        <p style="color: var(--text-muted); margin-bottom: 32px;">Ingrese los detalles bibliográficos.</p>
+        <form id="form-add-book" style="display: flex; flex-direction: column; gap: 20px;">
+            <input type="text" name="title" placeholder="Título de la obra" class="form-input" required>
+            <input type="text" name="author" placeholder="Autor / Escritor" class="form-input" required>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <input type="number" name="year" placeholder="Año" class="form-input" required>
+                <input type="text" name="genre" placeholder="Género" class="form-input" required>
+            </div>
+            <textarea name="description" placeholder="Sinopsis de la obra..." class="form-input" style="min-height: 120px; resize: vertical;"></textarea>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <button type="button" onclick="closeModal('modal-add-book')" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-edit-book" class="modal-overlay">
+    <div class="modal-container">
+        <h2 class="heading-md">Editar Obra</h2>
+        <p style="color: var(--text-muted); margin-bottom: 32px;">Modifique los datos del libro seleccionado.</p>
+        <form id="form-edit-book" style="display: flex; flex-direction: column; gap: 20px;">
+            <input type="hidden" name="id">
+            <input type="text" name="title" placeholder="Título de la obra" class="form-input" required>
+            <input type="text" name="author" placeholder="Autor / Escritor" class="form-input" required>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <input type="number" name="year" placeholder="Año" class="form-input" required>
+                <input type="text" name="genre" placeholder="Género" class="form-input" required>
+            </div>
+            <textarea name="description" placeholder="Sinopsis de la obra..." class="form-input" style="min-height: 120px; resize: vertical;"></textarea>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <button type="button" onclick="closeModal('modal-edit-book')" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadData() {
+    try {
+        const uRes = await fetch('/api/users');
+        const users = await uRes.json();
+        const uTable = document.getElementById('user-table');
+        uTable.innerHTML = '';
+        users.forEach(u => {
+            uTable.innerHTML += `
+                <tr>
+                    <td style="font-weight: 600;">${u.username}</td>
+                    <td style="color: var(--text-muted);">${u.email}</td>
+                    <td><span class="badge">${u.role}</span></td>
+                    <td style="text-align: right;">
+                        <button onclick="deleteUser('${u.username}')" style="color: #e63946; background: none; border: none; cursor: pointer;">
+                            <span class="material-symbols-rounded">delete</span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        const bRes = await fetch('/api/books');
+        const books = await bRes.json();
+        const bTable = document.getElementById('book-table');
+        bTable.innerHTML = '';
+        books.forEach(b => {
+            bTable.innerHTML += `
+                <tr>
+                    <td style="font-weight: 600;">${b.title}</td>
+                    <td>${b.author}</td>
+                    <td style="color: var(--text-muted);">${b.year}</td>
+                    <td><span class="badge">${b.genre}</span></td>
+                    <td style="text-align: right; display: flex; gap: 12px; justify-content: flex-end;">
+                        <button onclick='editBook(${JSON.stringify(b)})' style="color: var(--primary); background: none; border: none; cursor: pointer;">
+                            <span class="material-symbols-rounded">edit</span>
+                        </button>
+                        <button onclick="deleteBook(${b.id})" style="color: #e63946; background: none; border: none; cursor: pointer;">
+                            <span class="material-symbols-rounded">delete</span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (e) { console.error('Error loading data:', e); }
+}
+
+function editBook(book) {
+    const form = document.getElementById('form-edit-book');
+    form.id.value = book.id;
+    form.title.value = book.title;
+    form.author.value = book.author;
+    form.year.value = book.year;
+    form.genre.value = book.genre;
+    form.description.value = book.description || '';
+    openModal('modal-edit-book');
+}
+
+async function deleteBook(id) { 
+    if(confirm('¿Eliminar libro?')) { 
+        const res = await fetch(`/api/books/${id}`, {method:'DELETE'}); 
+        if(res.ok) loadData(); 
+    } 
+}
+
+async function deleteUser(u) { 
+    if(confirm('¿Eliminar usuario?')) { 
+        const res = await fetch(`/api/users/${u}`, {method:'DELETE'}); 
+        if(res.ok) loadData(); 
+    } 
+}
+
+document.getElementById('form-user').onsubmit = async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    const res = await fetch('/api/users', { 
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify(data)
+    });
+    if(res.ok) {
+        closeModal('modal-add-user'); 
+        e.target.reset(); 
+        loadData();
+    }
+};
+
+document.getElementById('form-add-book').onsubmit = async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    data.year = parseInt(data.year);
+    const res = await fetch('/api/books', { 
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify(data)
+    });
+    if(res.ok) {
+        closeModal('modal-add-book'); 
+        e.target.reset(); 
+        loadData();
+    }
+};
+
+document.getElementById('form-edit-book').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const id = formData.get('id');
+    const data = Object.fromEntries(formData.entries());
+    data.year = parseInt(data.year);
+    
+    const res = await fetch(`/api/books/${id}`, { 
+        method:'PUT', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify(data)
+    });
+    if(res.ok) {
+        closeModal('modal-edit-book'); 
+        loadData();
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadData);
+} else {
+    loadData();
+}
+</script>
+{% endblock %}

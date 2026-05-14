@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="min-height: calc(100vh - 80px); display: flex; align-items: stretch;">
+    <!-- Art Section -->
+    <div style="flex: 1.2; background: url('/static/images/login_bg.png') center/cover no-repeat; position: relative;" class="hidden md:block">
+        <div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(114, 82, 51, 0.4), transparent);"></div>
+        <div style="position: absolute; bottom: 60px; left: 60px; color: white; text-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+            <h2 class="heading-xl" style="color: white; margin-bottom: 8px;">"Un libro es un regalo que puedes abrir una y otra vez."</h2>
+            <p style="font-size: 1.2rem; opacity: 0.9;">— Garrison Keillor</p>
+        </div>
+    </div>
+
+    <!-- Login Section -->
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; background-image: url('/static/images/main_bg.png'); padding: 40px;">
+        <div class="animate-fade" style="width: min(400px, 100%);">
+            <div style="text-align: center; margin-bottom: 48px;">
+                <div style="width: 80px; height: 80px; background: var(--primary); color: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; box-shadow: var(--shadow-lg);">
+                    <span class="material-symbols-rounded" style="font-size: 2.5rem;">auto_stories</span>
+                </div>
+                <h1 class="heading-lg" style="margin-bottom: 12px;">Acceso Editorial</h1>
+                <p style="color: var(--text-muted); font-size: 1.1rem;">Inicia sesión para entrar al panel de gestión.</p>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                {% for message in messages %}
+                  <div style="background: #fef2f2; border-left: 4px solid #ef4444; color: #991b1b; padding: 16px; border-radius: var(--radius-sm); margin-bottom: 32px; font-size: 0.95rem; font-weight: 500;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle; margin-right: 8px;">error</span>
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST" style="display: flex; flex-direction: column; gap: 28px;">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-weight: 700; font-size: 0.9rem; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 1px;">Usuario</label>
+                    <div style="position: relative;">
+                        <span class="material-symbols-rounded" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.4rem;">account_circle</span>
+                        <input type="text" name="username" class="form-input" style="padding-left: 52px; height: 56px;" placeholder="ej. admin" required autofocus>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-weight: 700; font-size: 0.9rem; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 1px;">Contraseña</label>
+                    <div style="position: relative;">
+                        <span class="material-symbols-rounded" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.4rem;">lock_open</span>
+                        <input type="password" name="password" class="form-input" style="padding-left: 52px; height: 56px;" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.1rem; margin-top: 12px; border-radius: 16px;">
+                    Entrar al Sistema
+                </button>
+            </form>
+
+            <div style="margin-top: 48px; text-align: center; border-top: 1px solid var(--border); padding-top: 32px;">
+                <p style="color: var(--text-muted); font-size: 0.95rem;">¿Problemas de acceso?</p>
+                <a href="#" style="color: var(--primary); font-weight: 700; text-decoration: none; display: block; margin-top: 8px;">Soporte Técnico</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        .md\:block { display: none !important; }
+    }
+</style>
+{% endblock %}
